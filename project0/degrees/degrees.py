@@ -123,6 +123,7 @@ def shortest_path(source, target):
                     frontier.frontier[0] = explored_ids[frontier.frontier[0].parent]
                 path.reverse()
                 path = path + [(movie_id, target)]
+                print(f"Nodes explored: {len(explored_ids)}")
                 return path
 
             for actor_id in movies[movie_id]['stars']:
