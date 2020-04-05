@@ -1,5 +1,6 @@
 import csv
 import sys
+from time import sleep # for debugging. remove later
 
 from util import Node, StackFrontier, QueueFrontier
 
@@ -29,6 +30,9 @@ def load_data(directory):
             if row["name"].lower() not in names:
                 names[row["name"].lower()] = {row["id"]}
             else:
+                # The names dictionary is a way to look up a person by their name:
+                # it maps names to a set of corresponding ids
+                #(because it’s possible that multiple actors have the same name).
                 names[row["name"].lower()].add(row["id"])
 
     # Load movies
@@ -91,9 +95,56 @@ def shortest_path(source, target):
 
     If no possible path, returns None.
     """
+    frontier = QueueFrontier()
+    # source and target are person_ids
+    # get {source: {movie_set}}
+    initial_state = Node([source, people[source]['movies']], None, None)
+    frontier.add(initial_state)
 
-    # TODO
-    raise NotImplementedError
+    # list of people_ids that have been explored
+    explored_ids = {}
+    # list for return value
+    path = []
+
+    # loop: check each movie in movie_set
+    while True:
+        print(f"DEBUG: Searching the frontier... node: {frontier.frontier[0].state, frontier.frontier[0].parent, frontier.frontier[0].action}")
+        if len(frontier.frontier) == 0:
+            # last item removed from frontier, nothing left to explore so there is no solution
+            return None
+
+        for movie_id in frontier.frontier[0].state[1]:
+            if target in movies[movie_id]['stars']:
+                while True:
+                    if frontier.frontier[0].parent == None or frontier.frontier[0].parent == source:
+                        break
+                    print(f"DEBUG: Adding node to path... node: {frontier.frontier[0].state, frontier.frontier[0].parent, frontier.frontier[0].action}")
+                    path.append((frontier.frontier[0].action, frontier.frontier[0].parent))
+                    frontier.frontier[0] = explored_ids[frontier.frontier[0].parent]
+                path.reverse()
+                path = path + [(movie_id, target)]
+                return path
+
+            for actor_id in movies[movie_id]['stars']:
+                if actor_id not in explored_ids.keys() and actor_id != source:
+                    frontier.add(Node([actor_id, people[actor_id]['movies']], frontier.frontier[0].state[0], movie_id))
+                    print(f"DEBUG: Adding to the frontier... node: {frontier.frontier[-1].state, frontier.frontier[-1].parent, frontier.frontier[-1].action}")
+
+            # for each movie, get {movie: {stars_set}}
+                # goal check: if target in stars_set end
+                # else add {movie: stars_set} to frontier
+        # movie list exhausted, move to next and track the explored node
+        try:
+            explored_ids[frontier.frontier[0].state[0]] = frontier.remove()
+        except IndexError:
+            raise Exception(f"{source} has not starred in any movies in this dataset.")
+
+    # path = [(person_id, movie_id), ...]
+    # work backwards, up the chain, tracing my way back from the target to the source
+    # this current node has: [actor, movies], parent_actor_id, parent_movie_id
+    # so, i can take one step back but I'm deleting the nodes so the previous parent data is destroyed
+    # explored_ids needs to be nodes, not just actor_ids
+    return False
 
 
 def person_id_for_name(name):
