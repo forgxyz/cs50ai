@@ -1,2 +1,2 @@
 # debugging
-- The wrong movie name is displaying
+- bfs doesn't scale
