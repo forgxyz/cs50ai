@@ -125,8 +125,8 @@ def shortest_path(source, target):
             if person_id == target:
                 # target MAY appear multiple times in this set, depending on the movie...
                 path = [(movie_id, target)]
-                while True:
                     if suspect.parent == None:
+                        while True:
                         break
                     # path.append(movie_id that ties together source and next actor, next_actor_id)
                     path.append((suspect.action, suspect.state))
