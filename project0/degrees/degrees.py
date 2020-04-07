@@ -97,58 +97,55 @@ def shortest_path(source, target):
     If no possible path, returns None.
     """
     frontier = QueueFrontier()
-    # source and target are person_ids
-    # get {source: {movie_set}}
-    initial_state = Node([source, people[source]['movies']], None, None)
+    initial_state = Node(source, None, None)
+
     frontier.add(initial_state)
-    # list of people_ids that have been explored, preload the initial state
-    explored_ids = {source: initial_state}
+    explored = {}
 
-    # list for return value
-    path = []
-
-    # loop: check each movie in movie_set
     while True:
-        print(f"DEBUG: Searching the frontier... node: {frontier.frontier[0].state, frontier.frontier[0].parent, frontier.frontier[0].action}")
         if len(frontier.frontier) == 0:
-            # last item removed from frontier, nothing left to explore so there is no solution
+            print("DEBUG: Frontier empty...")
+            return None
+        suspect = frontier.frontier[0]
+        print(f"DEBUG: exploring {suspect.state}...")
+        # get every co-star for the current node
+        neighbors = neighbors_for_person(suspect.state)
+        print(f"DEBUG: neighbors: {neighbors}")
+        if len(neighbors) == 0:
+            print("DEBUG: No neighbors...")
             return None
 
-        for movie_id in frontier.frontier[0].state[1]:
-            if target in movies[movie_id]['stars']:
+        for movie_id, person_id in neighbors:
+            # do not re-explore an actors neighbors
+            print(f"DEBUG: now scanning {movie_id, person_id}...")
+            # if person_id in explored:
+            #     print(f"DEBUG: {person_id} explored, ignoring...")
+            #     break
+
+            if person_id == target:
+                # target MAY appear multiple times in this set, depending on the movie...
                 path = [(movie_id, target)]
-                while True:
-                    if frontier.frontier[0].parent == None:
+                    if suspect.parent == None:
+                        while True:
                         break
-                    print(f"DEBUG: Adding node to path... node: {frontier.frontier[0].state, frontier.frontier[0].parent, frontier.frontier[0].action}")
-                    path.append((frontier.frontier[0].action, frontier.frontier[0].state[0]))
-                    frontier.frontier[0] = explored_ids[frontier.frontier[0].parent]
+                    # path.append(movie_id that ties together source and next actor, next_actor_id)
+                    path.append((suspect.action, suspect.state))
+                    print(f"DEBUG: added to path {suspect.action, suspect.state}")
+                    # overwrite suspect with the next parent up the chain for the loop
+                    suspect = explored[suspect.parent]
                 path.reverse()
-                print(f"Nodes explored: {len(explored_ids)}")
                 return path
 
-            for actor_id in movies[movie_id]['stars']:
-                if actor_id not in explored_ids.keys():
-                    frontier.add(Node([actor_id, people[actor_id]['movies']], frontier.frontier[0].state[0], movie_id))
-                    print(f"DEBUG: Adding to the frontier... node: {frontier.frontier[-1].state, frontier.frontier[-1].parent, frontier.frontier[-1].action}")
+            # if not target & not in frontier, add to the frontier
+            # ([person, movies set], movie linking person to parent, parent)
+            if not frontier.contains_state(person_id):
+                print(f"DEBUG: {person_id} not in frontier, adding...")
+                frontier.add(Node(person_id, suspect.state, movie_id))
 
-            # for each movie, get {movie: {stars_set}}
-                # goal check: if target in stars_set end
-                # else add {movie: stars_set} to frontier
-        # movie list exhausted, move to next and track the explored node
-        try:
-            drop = frontier.remove()
-            explored_ids[drop.state[0]] = drop
-            print(f"DEBUG: explored nodes: {explored_ids}")
-        except IndexError:
-            raise Exception(f"{source} has not starred in any movies in this dataset.")
-
-    # path = [(person_id, movie_id), ...]
-    # work backwards, up the chain, tracing my way back from the target to the source
-    # this current node has: [actor, movies], parent_actor_id, parent_movie_id
-    # so, i can take one step back but I'm deleting the nodes so the previous parent data is destroyed
-    # explored_ids needs to be nodes, not just actor_ids
-    return False
+        # pop suspect
+        print(f"DEBUG: popping {suspect.state}")
+        explored[suspect.state] = frontier.remove()
+        print(f"DEBUG: explored {len(explored)} states")
 
 
 def person_id_for_name(name):
@@ -185,8 +182,9 @@ def neighbors_for_person(person_id):
     movie_ids = people[person_id]["movies"]
     neighbors = set()
     for movie_id in movie_ids:
-        for person_id in movies[movie_id]["stars"]:
-            neighbors.add((movie_id, person_id))
+        for actor_id in movies[movie_id]["stars"]:
+            if actor_id != person_id:
+                neighbors.add((movie_id, actor_id))
     return neighbors
 
 
