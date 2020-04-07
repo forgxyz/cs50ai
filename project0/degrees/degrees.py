@@ -81,11 +81,12 @@ def main():
         degrees = len(path)
         print(f"{degrees} degrees of separation.")
         path = [(None, source)] + path
+        print(f"path: {path}")
         for i in range(degrees):
             person1 = people[path[i][1]]["name"]
             person2 = people[path[i + 1][1]]["name"]
             movie = movies[path[i + 1][0]]["title"]
-            print(f"{i + 1}: {person1} and {person2} starred in {movie}")
+            print(f"{i + 1}: {person1}({path[i][1]}) and {person2}({path[i + 1][1]}) starred in {movie}({path[i + 1][0]})")
 
 
 def shortest_path(source, target):
@@ -100,9 +101,9 @@ def shortest_path(source, target):
     # get {source: {movie_set}}
     initial_state = Node([source, people[source]['movies']], None, None)
     frontier.add(initial_state)
+    # list of people_ids that have been explored, preload the initial state
+    explored_ids = {source: initial_state}
 
-    # list of people_ids that have been explored
-    explored_ids = {}
     # list for return value
     path = []
 
@@ -115,19 +116,19 @@ def shortest_path(source, target):
 
         for movie_id in frontier.frontier[0].state[1]:
             if target in movies[movie_id]['stars']:
+                path = [(movie_id, target)]
                 while True:
-                    if frontier.frontier[0].parent == None or frontier.frontier[0].parent == source:
+                    if frontier.frontier[0].parent == None:
                         break
                     print(f"DEBUG: Adding node to path... node: {frontier.frontier[0].state, frontier.frontier[0].parent, frontier.frontier[0].action}")
-                    path.append((frontier.frontier[0].action, frontier.frontier[0].parent))
+                    path.append((frontier.frontier[0].action, frontier.frontier[0].state[0]))
                     frontier.frontier[0] = explored_ids[frontier.frontier[0].parent]
                 path.reverse()
-                path = path + [(movie_id, target)]
                 print(f"Nodes explored: {len(explored_ids)}")
                 return path
 
             for actor_id in movies[movie_id]['stars']:
-                if actor_id not in explored_ids.keys() and actor_id != source:
+                if actor_id not in explored_ids.keys():
                     frontier.add(Node([actor_id, people[actor_id]['movies']], frontier.frontier[0].state[0], movie_id))
                     print(f"DEBUG: Adding to the frontier... node: {frontier.frontier[-1].state, frontier.frontier[-1].parent, frontier.frontier[-1].action}")
 
@@ -136,7 +137,9 @@ def shortest_path(source, target):
                 # else add {movie: stars_set} to frontier
         # movie list exhausted, move to next and track the explored node
         try:
-            explored_ids[frontier.frontier[0].state[0]] = frontier.remove()
+            drop = frontier.remove()
+            explored_ids[drop.state[0]] = drop
+            print(f"DEBUG: explored nodes: {explored_ids}")
         except IndexError:
             raise Exception(f"{source} has not starred in any movies in this dataset.")
 
