@@ -97,55 +97,66 @@ def shortest_path(source, target):
     If no possible path, returns None.
     """
     frontier = QueueFrontier()
-    initial_state = Node(source, None, None)
+    # NODES = (source = actor, parent = (movie_id, actor_id), actions = source movie set)
+    initial_state = Node(source, (None, None), people[source]['movies'])
 
     frontier.add(initial_state)
+
+    # explored will be a dictionary of actor_id: node that we searched
     explored = {}
 
     while True:
         if len(frontier.frontier) == 0:
             print("DEBUG: Frontier empty...")
             return None
+
+        # suspect is the node we are currently searching which is at the start of the frontier
         suspect = frontier.frontier[0]
-        print(f"DEBUG: exploring {suspect.state}...")
+        debug(f"DEBUG: exploring {suspect.state}...")
+
         # get every co-star for the current node
         neighbors = neighbors_for_person(suspect.state)
-        print(f"DEBUG: neighbors: {neighbors}")
+        debug(f"DEBUG: neighbors: {neighbors}")
         if len(neighbors) == 0:
             print("DEBUG: No neighbors...")
             return None
 
         for movie_id, person_id in neighbors:
             # do not re-explore an actors neighbors
-            print(f"DEBUG: now scanning {movie_id, person_id}...")
+            debug(f"DEBUG: now scanning {movie_id, person_id}...")
             # if person_id in explored:
             #     print(f"DEBUG: {person_id} explored, ignoring...")
             #     break
 
             if person_id == target:
                 # target MAY appear multiple times in this set, depending on the movie...
-                path = [(movie_id, target)]
-                    if suspect.parent == None:
-                        while True:
+                path = [(movie_id, person_id)]
+                debug(f"DEBUG target{target} found, adding {path} to path.")
+                while True:
+                    if suspect.parent[1] == None:
+                        # then this is the initial state, do not add
                         break
-                    # path.append(movie_id that ties together source and next actor, next_actor_id)
-                    path.append((suspect.action, suspect.state))
-                    print(f"DEBUG: added to path {suspect.action, suspect.state}")
+                    path.append((suspect.parent[0], suspect.state))
+                    debug(f"DEBUG: added to path {suspect.parent[0], suspect.state} parent: {suspect.parent[1]}")
                     # overwrite suspect with the next parent up the chain for the loop
-                    suspect = explored[suspect.parent]
+                    suspect = explored[suspect.parent[1]]
                 path.reverse()
+                debug(f"Nodes explored: {len(explored)}")
                 return path
 
             # if not target & not in frontier, add to the frontier
             # ([person, movies set], movie linking person to parent, parent)
             if not frontier.contains_state(person_id):
-                print(f"DEBUG: {person_id} not in frontier, adding...")
-                frontier.add(Node(person_id, suspect.state, movie_id))
+                debug(f"DEBUG: {person_id} not in frontier, adding...")
+                frontier.add(Node(person_id, (movie_id, suspect.state), people[person_id]['movies']))
 
         # pop suspect
-        print(f"DEBUG: popping {suspect.state}")
+        debug(f"DEBUG: popping {suspect.state}")
         explored[suspect.state] = frontier.remove()
-        print(f"DEBUG: explored {len(explored)} states")
+        if frontier.frontier[0].state in explored:
+            duplicate = frontier.remove()
+            debug(f"Node {duplicate.state, duplicate.parent, duplicate.action} was next on the frontier but we have already explored {duplicate.state}... popping...")
+        debug(f"DEBUG: explored {len(explored)} states")
 
 
 def person_id_for_name(name):
@@ -186,6 +197,13 @@ def neighbors_for_person(person_id):
             if actor_id != person_id:
                 neighbors.add((movie_id, actor_id))
     return neighbors
+
+
+def debug(message):
+    with open("scratch_files/log.txt", "a") as f:
+        f.write(f"{message}\n")
+        print(message)
+        return True
 
 
 if __name__ == "__main__":
