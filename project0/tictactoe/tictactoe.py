@@ -2,11 +2,9 @@
 Tic Tac Toe Player
 """
 
-import math
 
 from copy import deepcopy
-
-from util import Node, StackFrontier, QueueFrontier
+from math import inf
 
 
 X = "X"
@@ -123,41 +121,41 @@ def utility(board):
         return -1
     return 0
 
-
 def minimax(board):
     """
     Returns the optimal action for the current player on the board.
     """
-    # check if game is over
+    if player(board) == X:
+        return max_val(board, board)
+    else:
+        return min_val(board, board)
+
+
+def max_val(board, original):
     if terminal(board):
-        return None
+        return utility(board)
 
-    # is computer X or O?
-    player = player(board)
+    v = -inf
+    act_val = {}
+    for i, action in enumerate(actions(board)):
+        v = max(v, min_val(result(board, action), original))
+        if board == original:
+            act_val[min_val(result(board, action), original)] = action
+    if board == original:
+        return act_val[max(act_val.keys())]
+    return v
 
-    # preserve the game board from any changes
-    state = deepcopy(board)
 
-    while True:
-        # get options
-        actions = actions(state)
-        # iterate through the children of the present state
-        for action in actions:
-            # determine resulting board
-            value = utility(result(state, action))
-            if value == 1:
-                # MAX if X, MIN if 0
-                # whose turn is it? -- need to track that
-                # level 0/even = player, level 1/odd = !player
-                # level0 is direct children of board
-                pass
-            if value == -1:
-                pass
-            if value == 0:
-                # check for this last bc 0 node gets explored
-                if terminal(state):
-                    #
-                    break
-                    # game not over, check the children of this option
+def min_val(board, original):
+    if terminal(board):
+        return utility(board)
 
-    return move
+    v = inf
+    act_val = {}
+    for action in actions(board):
+        v = min(v, max_val(result(board, action), original))
+        if board == original:
+            act_val[max_val(result(board, action), original)] = action
+    if board == original:
+        return act_val[min(act_val.keys())]
+    return v
