@@ -128,7 +128,7 @@ def minimax(board):
     if player(board) == X:
         return max_val(board, board)
     else:
-        min_val(board, board)
+        return min_val(board, board)
 
 
 def max_val(board, original):
@@ -136,10 +136,13 @@ def max_val(board, original):
         return utility(board)
 
     v = -inf
-    for action in actions(board):
+    act_val = {}
+    for i, action in enumerate(actions(board)):
         v = max(v, min_val(result(board, action), original))
-        if v == 1 and board == original:
-            return action
+        if board == original:
+            act_val[min_val(result(board, action), original)] = action
+    if board == original:
+        return act_val[max(act_val.keys())]
     return v
 
 
@@ -148,8 +151,11 @@ def min_val(board, original):
         return utility(board)
 
     v = inf
+    act_val = {}
     for action in actions(board):
         v = min(v, max_val(result(board, action), original))
-        if v == -1 and board == original:
-            return action
+        if board == original:
+            act_val[max_val(result(board, action), original)] = action
+    if board == original:
+        return act_val[min(act_val.keys())]
     return v
