@@ -131,6 +131,9 @@ def minimax(board):
         return min_val(board, board)
 
 
+# can make this work faster with AB pruning
+
+
 def max_val(board, original):
     if terminal(board):
         return utility(board)
