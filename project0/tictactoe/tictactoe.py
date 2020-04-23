@@ -131,31 +131,35 @@ def minimax(board):
         return min_val(board, board)
 
 
-def max_val(board, original):
+def max_val(board, original, n):
     if terminal(board):
         return utility(board)
 
     v = -inf
     moves = {}
     for action in actions(board):
-        v = max(v, min_val(result(board, action), original))
+        eval = min_val(result(board, action), original)
+        v = max(v, eval)
         if board == original:
-            moves[min_val(result(board, action), original)] = action
+            moves[eval] = action
     if board == original:
         return moves[max(moves.keys())]
+
     return v
 
 
-def min_val(board, original):
+def min_val(board, original, n):
     if terminal(board):
         return utility(board)
 
     v = inf
     moves = {}
+    
     for action in actions(board):
-        v = min(v, max_val(result(board, action), original))
+        eval = max_val(result(board, action), original)
+        v = min(v, eval)
         if board == original:
-            moves[max_val(result(board, action), original)] = action
+            moves[eval] = action
     if board == original:
         return moves[min(moves.keys())]
     return v
