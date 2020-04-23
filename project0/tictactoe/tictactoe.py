@@ -171,3 +171,8 @@ def min_val(board, n, alpha, beta):
     if n == 0:
         return moves[min(moves.keys())]
     return v
+
+def debug(message):
+    print(message)
+    # with open('ignore/debug.txt', 'a+') as f:
+    #     f.write(f"{message}\n")
