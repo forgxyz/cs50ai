@@ -126,45 +126,36 @@ def minimax(board):
     Returns the optimal action for the current player on the board.
     """
     if player(board) == X:
-        return max_val(board, board, -inf, inf)
+        return max_val(board, board)
     else:
-        return min_val(board, board, inf, -inf)
+        return min_val(board, board)
 
 
-# can make this work faster with AB pruning
-
-
-def max_val(board, original, alpha, beta):
+def max_val(board, original):
     if terminal(board):
         return utility(board)
 
     v = -inf
-    act_val = {}
-    for i, action in enumerate(actions(board)):
-        v = max(v, min_val(result(board, action), original, alpha, beta))
-        alpha = max(v, alpha)
+    moves = {}
+    for action in actions(board):
+        v = max(v, min_val(result(board, action), original))
         if board == original:
-            act_val[min_val(result(board, action), original, alpha, beta)] = action
-        if beta <= alpha:
-            break
+            moves[min_val(result(board, action), original)] = action
     if board == original:
-        return act_val[max(act_val.keys())]
+        return moves[max(moves.keys())]
     return v
 
 
-def min_val(board, original, alpha, beta):
+def min_val(board, original):
     if terminal(board):
         return utility(board)
 
     v = inf
-    act_val = {}
+    moves = {}
     for action in actions(board):
-        v = min(v, max_val(result(board, action), original, alpha, beta))
-        beta = min(v, beta)
+        v = min(v, max_val(result(board, action), original))
         if board == original:
-            act_val[max_val(result(board, action), original, alpha, beta)] = action
-        if beta <= alpha:
-            break
+            moves[max_val(result(board, action), original)] = action
     if board == original:
-        return act_val[min(act_val.keys())]
+        return moves[min(moves.keys())]
     return v
