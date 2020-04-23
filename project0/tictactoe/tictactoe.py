@@ -31,9 +31,9 @@ def player(board):
     for row in board:
         remaining += row.count(EMPTY)
     if remaining % 2 == 0:
-        return O
+        return O, remaining
     # odd number of EMPTY spaces indicates it is either initial_state or otherwise X's turn
-    return X
+    return X, remaining
 
 
 def actions(board):
@@ -61,7 +61,7 @@ def result(board, action):
 
     # add an X or an O to the board('s copy)
     result = deepcopy(board)
-    result[row][cell] = player(board)
+    result[row][cell], _ = player(board)
     return result
 
 
@@ -125,48 +125,52 @@ def minimax(board):
     """
     Returns the optimal action for the current player on the board.
     """
-    if player(board) == X:
-        return max_val(board, 0, -inf, inf)
+
+    plr, remaining = player(board)
+    if plr == X:
+        return max_val(board, 0, remaining, -inf, inf)
     else:
-        return min_val(board, 0, -inf, inf)
+        return min_val(board, 0, remaining, -inf, inf)
 
 
-def max_val(board, n, alpha, beta):
+def max_val(board, n, depth, alpha, beta):
     if terminal(board):
         return utility(board)
 
     v = -inf
     moves = {}
     for action in actions(board):
-        eval = min_val(result(board, action), n + 1, alpha, beta)
+        eval = min_val(result(board, action), n + 1, depth - 1, alpha, beta)
         v = max(v, eval)
-        alpha = max(alpha, v)
+        if depth != 1:
+            alpha = max(alpha, v)
         if n == 0:
             if eval == 1:
                 return action
             moves[eval] = action
-        if beta <= alpha:
+        if alpha > beta:
             break
     if n == 0:
         return moves[max(moves.keys())]
     return v
 
 
-def min_val(board, n, alpha, beta):
+def min_val(board, n, depth, alpha, beta):
     if terminal(board):
         return utility(board)
 
     v = inf
     moves = {}
     for action in actions(board):
-        eval = max_val(result(board, action), n + 1, alpha, beta)
+        eval = max_val(result(board, action), n + 1, depth - 1, alpha, beta)
         v = min(v, eval)
-        beta = min(beta, v)
+        if depth != 1:
+            beta = min(beta, v)
         if n == 0:
             if eval == -1:
                 return action
             moves[eval] = action
-        if beta <= alpha:
+        if alpha > beta:
             break
     if n == 0:
         return moves[min(moves.keys())]
