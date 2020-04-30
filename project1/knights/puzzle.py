@@ -34,20 +34,20 @@ knowledge2 = And(
     # A says "We are the same kind."
     Implication(
         AKnight,
-        And(Or(And(AKnight, BKnight), And(AKnave, BKnave)), Not(And(And(AKnight, BKnave), And(AKnave, BKnave))))
+        Or(And(AKnight, BKnight), And(AKnave, BKnave))
     ),
     Implication(
         AKnave,
-        Not(And(Or(And(AKnight, BKnight), And(AKnave, BKnave)), Not(And(And(AKnight, BKnave), And(AKnave, BKnave)))))
+        And(Not(And(AKnight, BKnight)), Not(And(AKnave, BKnave)))
     ),
     # B says "We are of different kinds."
     Implication(
         BKnight,
-        Not(And(Or(And(AKnight, BKnight), And(AKnave, BKnave)), Not(And(And(AKnight, BKnave), And(AKnave, BKnave)))))
+        And(Not(And(AKnight, BKnight)), Not(And(AKnave, BKnave)))
     ),
     Implication(
         BKnave,
-        And(Or(And(AKnight, BKnight), And(AKnave, BKnave)), Not(And(And(AKnight, BKnave), And(AKnave, BKnave))))
+        Or(And(AKnight, BKnight), And(AKnave, BKnave))
     )
 )
 
@@ -57,11 +57,9 @@ knowledge3 = And(
     And(Or(BKnight, BKnave), Not(And(BKnight, BKnave))),
     And(Or(CKnight, CKnave), Not(And(CKnight, CKnave))),
     # A says either "I am a knight." or "I am a knave.", but you don't know which.
-    # Or(AKnight, AKnave),
-    # Or(Implication(AKnight, AKnave), Implication(AKnave, AKnight)),
     # B says "A said 'I am a knave'."
-    Implication(BKnight, Or(Implication(AKnight, AKnave), Implication(AKnave, AKnight))),
-    Implication(BKnave, AKnight),
+    Implication(BKnight, Implication(AKnave, AKnight)), # AKnight -> AKnave is an impossibility. T -> F is F
+    Implication(BKnave, Or(Implication(AKnight, AKnight), Implication(AKnave, AKnave))),
     # B says "C is a knave."
     Implication(BKnight, CKnave),
     Implication(BKnave, CKnight),
