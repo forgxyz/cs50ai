@@ -10,32 +10,62 @@ CKnight = Symbol("C is a Knight")
 CKnave = Symbol("C is a Knave")
 
 # Puzzle 0
-# A says "I am both a knight and a knave."
 knowledge0 = And(
-    # TODO
+    And(Or(AKnight, AKnave), Not(And(AKnight, AKnave))),
+    # A says "I am both a knight and a knave."
+    Implication(AKnight, And(AKnight, AKnave)),
+    Implication(AKnave, Not(And(AKnight, AKnave))),
 )
 
 # Puzzle 1
-# A says "We are both knaves."
-# B says nothing.
 knowledge1 = And(
-    # TODO
+    And(Or(AKnight, AKnave), Not(And(AKnight, AKnave))),
+    And(Or(BKnight, BKnave), Not(And(BKnight, BKnave))),
+    # A says "We are both knaves."
+    Implication(AKnight, And(AKnave, BKnave)),
+    Implication(AKnave, Not(And(AKnave, BKnave)))
+    # B says nothing.
 )
 
 # Puzzle 2
-# A says "We are the same kind."
-# B says "We are of different kinds."
 knowledge2 = And(
-    # TODO
+    And(Or(AKnight, AKnave), Not(And(AKnight, AKnave))),
+    And(Or(BKnight, BKnave), Not(And(BKnight, BKnave))),
+    # A says "We are the same kind."
+    Implication(
+        AKnight,
+        Or(And(AKnight, BKnight), And(AKnave, BKnave))
+    ),
+    Implication(
+        AKnave,
+        And(Not(And(AKnight, BKnight)), Not(And(AKnave, BKnave)))
+    ),
+    # B says "We are of different kinds."
+    Implication(
+        BKnight,
+        And(Not(And(AKnight, BKnight)), Not(And(AKnave, BKnave)))
+    ),
+    Implication(
+        BKnave,
+        Or(And(AKnight, BKnight), And(AKnave, BKnave))
+    )
 )
 
 # Puzzle 3
-# A says either "I am a knight." or "I am a knave.", but you don't know which.
-# B says "A said 'I am a knave'."
-# B says "C is a knave."
-# C says "A is a knight."
 knowledge3 = And(
-    # TODO
+    And(Or(AKnight, AKnave), Not(And(AKnight, AKnave))),
+    And(Or(BKnight, BKnave), Not(And(BKnight, BKnave))),
+    And(Or(CKnight, CKnave), Not(And(CKnight, CKnave))),
+    # A says either "I am a knight." or "I am a knave.", but you don't know which.
+    # B says "A said 'I am a knave'."
+    Implication(BKnight, Implication(AKnave, AKnight)), # AKnight -> AKnave is an impossibility. T -> F is F
+    Implication(BKnave, Or(Implication(AKnight, AKnight), Implication(AKnave, AKnave))),
+    # B says "C is a knave."
+    Implication(BKnight, CKnave),
+    Implication(BKnave, CKnight),
+    # C says "A is a knight."
+    Implication(CKnight, AKnight),
+    Implication(CKnave, AKnave)
 )
 
 
