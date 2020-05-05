@@ -179,48 +179,36 @@ class MinesweeperAI():
         """
 
         # 1) mark the cell as a move that has been made
-        print("marking move made")
         self.moves_made.add(cell)
 
         # 2) mark the cell as safe
-        print("marking safe")
         self.mark_safe(cell)
 
         # 3) add a new sentence to the AI's knowledge base based on the value of `cell` and `count`
         cells = set()
-        print("starting loop thru neighbors")
         for i in range(cell[0] - 1, cell[0] + 2):
-            print(f"i {i}")
             for j in range(cell[1] - 1, cell[1] + 2):
-                print(f"j {j}")
                 # only evaluate in cells within bounds
                 if 0 <= i < self.height and 0 <= j < self.width:
                     if (i, j) in self.moves_made:
-                        print(f"{i, j} is a previous move")
                         continue
 
                     if count == 0:
-                        print(f"{i, j} safe")
                         self.mark_safe((i, j))
                         continue
 
                     # Ignore known safe cells
                     if (i, j) in self.safes:
-                        print(f"safe: {(i, j) in self.safes}")
                         continue
 
                     # Ignore known mines and lower count
                     if (i, j) in self.mines:
-                        print(f"{i, j} mine")
                         count -= 1
                         continue
 
-                    print(f"adding {i, j} to sentence with count {count}")
                     cells.add((i,j))
-        print(f"for loop done, cells: {len(cells)}")
         if len(cells) == 0:
             return
-        print(f"appending {cells} = {count} to knowledge")
         self.knowledge.append(Sentence(cells, count))
 
         # 4) mark any additional cells as safe or as mines if it can be concluded based on the AI's knowledge base
@@ -265,13 +253,10 @@ class MinesweeperAI():
 
         try:
             while True:
-                print("safe true loop")
                 move = self.safes.pop()
                 if move in self.moves_made:
-                    print(f"{move} made, skipping")
                     continue
                 else:
-                    print(f"{move} IS THE SAFE MOVE")
                     return move
         except KeyError:
             return None
@@ -287,11 +272,9 @@ class MinesweeperAI():
         if len(self.moves_made) + len(self.mines) == self.height * self.width:
             return None
         while True:
-            print("random true loop")
             i = random.randint(0, self.height - 1)
             j = random.randint(0, self.width - 1)
             if (i, j) in self.mines or (i, j) in self.moves_made:
                 continue
             else:
-                print(f"{i, j} IS THE RANDOM MOVE")
                 return (i, j)

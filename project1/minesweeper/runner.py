@@ -216,10 +216,7 @@ while True:
             lost = True
         else:
             nearby = game.nearby_mines(move)
-            print(f"nearby {nearby}")
             revealed.add(move)
-            print("calling add_knowledge")
             ai.add_knowledge(move, nearby)
-        print("move complete")
 
     pygame.display.flip()
