@@ -7,6 +7,7 @@ DAMPING = 0.85
 SAMPLES = 10000
 
 # test from pythonista and working copy on iPad
+# confirmed from PC
 
 def main():
     if len(sys.argv) != 2:
