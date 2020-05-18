@@ -6,6 +6,7 @@ import sys
 DAMPING = 0.85
 SAMPLES = 10000
 
+# test from pythonista and working copy on iPad
 
 def main():
     if len(sys.argv) != 2:
