@@ -6,8 +6,6 @@ import sys
 DAMPING = 0.85
 SAMPLES = 10000
 
-# test from pythonista and working copy on iPad
-# confirmed from PC
 
 def main():
     if len(sys.argv) != 2:
@@ -59,7 +57,19 @@ def transition_model(corpus, page, damping_factor):
     linked to by `page`. With probability `1 - damping_factor`, choose
     a link at random chosen from all pages in the corpus.
     """
-    raise NotImplementedError
+    # both methods use this transition model
+    # take a page as input
+    pages, links = len(corpus.keys()), len(corpus[page])
+    rand = (1 - damping_factor) / pages # to be applied to all pages
+    inline = damping_factor / links
+    # probability of next page being a link vs random page
+    distribution = {}
+    for pg in corpus.keys():
+        distribution[pg] = rand
+        if pg in corpus[page]:
+            distribution[pg] += inline
+    return distribution
+    # return probability distribution of next page
 
 
 def sample_pagerank(corpus, damping_factor, n):
@@ -71,7 +81,24 @@ def sample_pagerank(corpus, damping_factor, n):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    raise NotImplementedError
+    # pick an initial page at random
+    page = list(corpus)[random.randint(0, len(corpus.keys()) - 1)]
+    visits = {pg: 0 for pg in corpus.keys()}
+    for i in range(n):
+        # keep track of surfer's moves
+        visits[page] += 1
+        # make next step based on the distribution
+        distribution = transition_model(corpus, page, damping_factor)
+        population, weights = list(distribution.keys()), list(distribution.values())
+        page = random.choices(population, weights=weights)[0]
+
+    # return distribution of what pages we actually went to (their rank)
+    check = 0
+    for key, value in visits.items():
+        visits[key] = value/10000
+        check += visits[key]
+    print(check)
+    return visits
 
 
 def iterate_pagerank(corpus, damping_factor):
