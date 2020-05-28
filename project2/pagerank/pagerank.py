@@ -61,15 +61,15 @@ def transition_model(corpus, page, damping_factor):
     # take a page as input
     pages, links = len(corpus.keys()), len(corpus[page])
     rand = (1 - damping_factor) / pages # to be applied to all pages
-    inline = damping_factor / links
+    inline = (damping_factor / links) if links > 0 else damping_factor
     # probability of next page being a link vs random page
     distribution = {}
     for pg in corpus.keys():
         distribution[pg] = rand
         if pg in corpus[page]:
             distribution[pg] += inline
-    return distribution
     # return probability distribution of next page
+    return distribution
 
 
 def sample_pagerank(corpus, damping_factor, n):
@@ -97,7 +97,7 @@ def sample_pagerank(corpus, damping_factor, n):
     for key, value in visits.items():
         visits[key] = value/10000
         check += visits[key]
-    print(check)
+    print(check == 1)
     return visits
 
 
@@ -110,6 +110,30 @@ def iterate_pagerank(corpus, damping_factor):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
+
+    N = len(corpus.keys())
+    # i don't like the var name visits, but that is a minor problem for later...
+    visits = {pg: 1 / N for pg in corpus.keys()}
+    # select first page at random. no weight needed
+    p = random.choices(list(visits.keys()))[0]
+
+    # begin iterative loop
+    while True:
+        # path one is randomly choosing a page (1 - d)/N
+        rando = (1 - damping_factor) / N
+
+        # path two is the surfer followed a link from i to p
+        # I is the set of all links i that lead to current page p
+        # we determine this if p is present in any page's corpus.values() list
+        I = [pg for pg, links in visits.items() if p in links]
+        for i in I:
+            numLinks = len(corpus[i])
+        """I think I have to write this in a separate function.
+        I don't see the value in recursively calling iterate_pagerank with the first three steps...
+        This while True loop is the equation that needs to be called over and over again, so it might be easiest to factor it out and
+        recursively call it within the current loop... """
+        # break only when all pagerank value change by less than .001
+        # so, maybe keep a list of False values the length of the pages. When all are flipped to True, it ends
     raise NotImplementedError
 
 
