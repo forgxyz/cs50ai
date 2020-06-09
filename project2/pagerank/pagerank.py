@@ -113,18 +113,22 @@ def iterate_pagerank(corpus, damping_factor):
     N = len(corpus.keys())
 
     # set initial values
-    ranks = {pg: 1 / N for pg in corpus.keys()}
-
+    ranks, flags = {pg: 1 / N for pg in corpus.keys()}, {pg: False for pg in corpus.keys()}
     # begin iterative loop
     while True:
         for page in corpus.keys():
-            rank = pagerank(page, ranks, corpus, damping_factor, N)
+            rank = pagerank(page, ranks, corpus, damping_factor, N, flags)
             if rank != True:
+                check = 0
+                for val in ranks.values():
+                    check += val
+                print(check)
                 return ranks
 
 
-def pagerank(page, ranks, corpus, damping_factor, N):
+def pagerank(page, ranks, corpus, damping_factor, N, flags):
     # randomly choose a page with probability (1 - d)/N
+    # this does not change so I can calculate this outside the loop
     rando = (1 - damping_factor) / N
     # I is the set of all links i that lead to current page p
     # we determine this if current page is present in any page's corpus.values() list
@@ -132,12 +136,11 @@ def pagerank(page, ranks, corpus, damping_factor, N):
     # iterate through body of links and sum probabilities in sigma
     sigma = 0
     for i in I:
-        probability = ranks[i]
-        numLinks = len(corpus[i])
-        sigma += (probability/numLinks)
-    follow = damping_factor * sigma
-    pr = rando + follow
+        sigma += (ranks[i]/len(corpus[i]))
+    pr = rando + (damping_factor * sigma)
     if abs(pr - ranks[page]) < .001:
+        flags[page] = True
+    if all(flags.values()):
         return ranks
     ranks[page] = pr
     return True
