@@ -125,13 +125,12 @@ def iterate_pagerank(corpus, damping_factor):
             sigma = 0
             for i in I:
                 sigma += (ranks[i]/len(corpus[i]))
-            pr = rando + (d * sigma)
+            newrank[page] = rando + (d * sigma)
 
             # convergence check
-            if abs(pr - ranks[page]) < .001:
+            if abs(newrank[page] - ranks[page]) < .001:
                 flags[page] = True
-            newrank[page] = pr
-            # return when all values converge within .001
+            
             if all(flags.values()):
                 return ranks
         ranks.update(newrank)
