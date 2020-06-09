@@ -57,7 +57,19 @@ def transition_model(corpus, page, damping_factor):
     linked to by `page`. With probability `1 - damping_factor`, choose
     a link at random chosen from all pages in the corpus.
     """
-    raise NotImplementedError
+    # both methods use this transition model
+    # take a page as input
+    pages, links = len(corpus.keys()), len(corpus[page])
+    rand = (1 - damping_factor) / pages # to be applied to all pages
+    inline = (damping_factor / links) if links > 0 else damping_factor
+    # probability of next page being a link vs random page
+    distribution = {}
+    for pg in corpus.keys():
+        distribution[pg] = rand
+        if pg in corpus[page]:
+            distribution[pg] += inline
+    # return probability distribution of next page
+    return distribution
 
 
 def sample_pagerank(corpus, damping_factor, n):
@@ -69,7 +81,20 @@ def sample_pagerank(corpus, damping_factor, n):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    raise NotImplementedError
+    # pick an initial page at random
+    page = list(corpus)[random.randint(0, len(corpus.keys()) - 1)]
+    ranks = {pg: 0 for pg in corpus.keys()}
+    for i in range(n):
+        # keep track of surfer's moves
+        ranks[page] += 1
+        # make next step based on the distribution
+        distribution = transition_model(corpus, page, damping_factor)
+        population, weights = list(distribution.keys()), list(distribution.values())
+        page = random.choices(population, weights=weights)[0]
+
+    # normalize to 1
+    ranks = {page: rank / n for page, rank in ranks.items()}
+    return ranks
 
 
 def iterate_pagerank(corpus, damping_factor):
@@ -81,7 +106,41 @@ def iterate_pagerank(corpus, damping_factor):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    raise NotImplementedError
+    N = len(corpus.keys())
+    d = damping_factor
+    # set initial values
+    ranks, flags, newrank = {pg: 1 / N for pg in corpus.keys()}, {pg: False for pg in corpus.keys()}, {pg: 0 for pg in corpus.keys()}
+    rando = (1 - d) / N
+
+    # A page that has no links at all should be interpreted as having one link for every page in the corpus (including itself).
+    for page, links in corpus.items():
+        if len(links) == 0:
+            corpus[page] = {page for page in corpus.keys()}
+
+    # begin iterative loop
+    while True:
+        for page in corpus.keys():
+            # list of all pages that link to the current page
+            I = [pg for pg, links in corpus.items() if page in links]
+            sigma = 0
+            for i in I:
+                sigma += (ranks[i]/len(corpus[i]))
+            newrank[page] = rando + (d * sigma)
+
+            # convergence check
+            if abs(newrank[page] - ranks[page]) < .001:
+                flags[page] = True
+            
+            if all(flags.values()):
+                return ranks
+        ranks.update(newrank)
+
+
+def checkrank(ranks):
+    check = 0
+    for val in ranks.values():
+        check += val
+    print(check == 1, check)
 
 
 if __name__ == "__main__":
