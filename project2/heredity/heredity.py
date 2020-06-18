@@ -1,4 +1,5 @@
 import csv
+import pandas as pd
 import itertools
 import sys
 
@@ -139,6 +140,68 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         * everyone in set `have_trait` has the trait, and
         * everyone not in set` have_trait` does not have the trait.
     """
+    # load people dict in to pandas dataframe
+    cols = ['name', 'mother', 'father', 'trait', 'child', 'gene', 'have_trait']
+    ppl = pd.DataFrame.from_dict(people, orient='index', columns=cols)
+    for person in ppl.index:
+        # set child flag - if parent, we use unconditional probability
+        ppl.loc[person].child = False if ppl.loc[person].mother == None and ppl.loc[person].father == None else True
+        # set flag for trait test case
+        ppl.loc[person].have_trait = True if person in have_trait else False
+        # set number of genes in this test case
+        if person in one_gene:
+            ppl.loc[person].gene = 1
+        elif person in two_genes:
+            ppl.loc[person].gene = 2
+        else:
+            ppl.loc[person].gene = 0
+
+
+    for person in ppl.index:
+        if ppl.loc[person].gene == 0:
+
+
+        if person in one_gene:
+            if people[person]['mother'] == None and people[person]['father'] == None:
+                # Unconditional probability - if the person is not a child
+                people[person]['probability'] = PROBS['gene'][1]
+
+            # otherwise, their one_gene is conditional on parents
+            # mother
+            mother = people[person]['mother']
+            if mother in one_gene:
+                # probability it was passed from a one gene person
+            elif mother in two_genes:
+                # probability blah blah
+            else:
+                # mutation
+            # father
+
+            if person in have_trait:
+                people[person]['probability'] *= PROBS['trait'][1]['true']
+
+            else:
+                people[person]['probability'] *= PROBS['trait'][1]['false']
+
+        elif person in two_genes:
+            people[person]['probability'] = PROBS['gene'][2]
+
+            if person in have_trait:
+                people[person]['probability'] *= PROBS['trait'][2]['true']
+
+            else:
+                people[person]['probability'] *= PROBS['trait'][2]['false']
+
+        else:
+            # asssumption is that they have 0 target genes
+            people[person]['probability'] = PROBS['gene'][0]
+            if person in have_trait:
+                people[person]['probability'] *= PROBS['trait'][0]['true']
+
+            else:
+                people[person]['probability'] *= PROBS['trait'][0]['false']
+
+
     raise NotImplementedError
 
 
