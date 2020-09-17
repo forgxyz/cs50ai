@@ -1,4 +1,6 @@
-# cs50ai
-CS50ai work files
+# My Project Files
 
-[Course Website](https://cs50.harvard.edu/ai)
+[to the course](https://cs50.harvard.edu/ai)
+[to home](https://jackforgash.com/)
+
+*i stopped work on this over the summer and will re-start in the fall*
