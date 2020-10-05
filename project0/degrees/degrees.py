@@ -1,6 +1,5 @@
 import csv
 import sys
-from time import sleep # for debugging. remove later
 
 from util import Node, StackFrontier, QueueFrontier
 
@@ -30,9 +29,6 @@ def load_data(directory):
             if row["name"].lower() not in names:
                 names[row["name"].lower()] = {row["id"]}
             else:
-                # The names dictionary is a way to look up a person by their name:
-                # it maps names to a set of corresponding ids
-                #(because it’s possible that multiple actors have the same name).
                 names[row["name"].lower()].add(row["id"])
 
     # Load movies
@@ -81,12 +77,11 @@ def main():
         degrees = len(path)
         print(f"{degrees} degrees of separation.")
         path = [(None, source)] + path
-        print(f"path: {path}")
         for i in range(degrees):
             person1 = people[path[i][1]]["name"]
             person2 = people[path[i + 1][1]]["name"]
             movie = movies[path[i + 1][0]]["title"]
-            print(f"{i + 1}: {person1}({path[i][1]}) and {person2}({path[i + 1][1]}) starred in {movie}({path[i + 1][0]})")
+            print(f"{i + 1}: {person1} and {person2} starred in {movie}")
 
 
 def shortest_path(source, target):
@@ -96,67 +91,9 @@ def shortest_path(source, target):
 
     If no possible path, returns None.
     """
-    frontier = QueueFrontier()
-    # NODES = (source = actor, parent = (movie_id, actor_id), actions = source movie set)
-    initial_state = Node(source, (None, None), people[source]['movies'])
 
-    frontier.add(initial_state)
-
-    # explored will be a dictionary of actor_id: node that we searched
-    explored = {}
-
-    while True:
-        if len(frontier.frontier) == 0:
-            print("DEBUG: Frontier empty...")
-            return None
-
-        # suspect is the node we are currently searching which is at the start of the frontier
-        suspect = frontier.frontier[0]
-        debug(f"DEBUG: exploring {suspect.state}...")
-
-        # get every co-star for the current node
-        neighbors = neighbors_for_person(suspect.state)
-        debug(f"DEBUG: neighbors: {neighbors}")
-        if len(neighbors) == 0:
-            print("DEBUG: No neighbors...")
-            return None
-
-        for movie_id, person_id in neighbors:
-            # do not re-explore an actors neighbors
-            debug(f"DEBUG: now scanning {movie_id, person_id}...")
-            # if person_id in explored:
-            #     print(f"DEBUG: {person_id} explored, ignoring...")
-            #     break
-
-            if person_id == target:
-                # target MAY appear multiple times in this set, depending on the movie...
-                path = [(movie_id, person_id)]
-                debug(f"DEBUG target{target} found, adding {path} to path.")
-                while True:
-                    if suspect.parent[1] == None:
-                        # then this is the initial state, do not add
-                        break
-                    path.append((suspect.parent[0], suspect.state))
-                    debug(f"DEBUG: added to path {suspect.parent[0], suspect.state} parent: {suspect.parent[1]}")
-                    # overwrite suspect with the next parent up the chain for the loop
-                    suspect = explored[suspect.parent[1]]
-                path.reverse()
-                debug(f"Nodes explored: {len(explored)}")
-                return path
-
-            # if not target & not in frontier, add to the frontier
-            # ([person, movies set], movie linking person to parent, parent)
-            if not frontier.contains_state(person_id):
-                debug(f"DEBUG: {person_id} not in frontier, adding...")
-                frontier.add(Node(person_id, (movie_id, suspect.state), people[person_id]['movies']))
-
-        # pop suspect
-        debug(f"DEBUG: popping {suspect.state}")
-        explored[suspect.state] = frontier.remove()
-        if frontier.frontier[0].state in explored:
-            duplicate = frontier.remove()
-            debug(f"Node {duplicate.state, duplicate.parent, duplicate.action} was next on the frontier but we have already explored {duplicate.state}... popping...")
-        debug(f"DEBUG: explored {len(explored)} states")
+    # TODO
+    raise NotImplementedError
 
 
 def person_id_for_name(name):
@@ -193,17 +130,9 @@ def neighbors_for_person(person_id):
     movie_ids = people[person_id]["movies"]
     neighbors = set()
     for movie_id in movie_ids:
-        for actor_id in movies[movie_id]["stars"]:
-            if actor_id != person_id:
-                neighbors.add((movie_id, actor_id))
+        for person_id in movies[movie_id]["stars"]:
+            neighbors.add((movie_id, person_id))
     return neighbors
-
-
-def debug(message):
-    with open("scratch_files/log.txt", "a") as f:
-        f.write(f"{message}\n")
-        print(message)
-        return True
 
 
 if __name__ == "__main__":
