@@ -1,7 +1,7 @@
 import csv
 import sys
 
-from util import Node, StackFrontier, QueueFrontier
+from util import Node, QueueFrontier
 
 # Maps names to a set of corresponding person_ids
 names = {}
@@ -91,9 +91,51 @@ def shortest_path(source, target):
 
     If no possible path, returns None.
     """
+    # initialize frontier, explored set and path list
+    frontier = QueueFrontier()
+    frontier.add(Node(source, False, False))
 
-    # TODO
-    raise NotImplementedError
+    explored = set()
+    path = []
+
+    while True:
+        # select node to expand
+        try:
+            person = frontier.remove()
+        except:
+            # empty state
+            return None
+
+        # get neighbors for person
+        neighbors = neighbors_for_person(person.state)
+
+        # loop thru neighbors
+        for neighbor in neighbors:
+
+            # if previously explored, skip
+            if neighbor[1] in explored:
+                continue
+
+            # if person_id in neighbor matches target, return path
+            if neighbor[1] == target:
+                #  construct list using nodes, following parents until none
+
+                person = Node(neighbor[1], person, neighbor[0])
+                while True:
+                    path = [(person.action, person.state)] + path
+
+                    person = person.parent
+                    if not person.parent:
+                        break
+
+                return path
+
+            # else, add to frontier if the state is not already there
+            if not frontier.contains_state(neighbor[1]):
+                frontier.add(Node(neighbor[1], person, neighbor[0]))
+
+            # mark state as explored
+            explored.add(neighbor[1])
 
 
 def person_id_for_name(name):
