@@ -25,7 +25,7 @@ def player(board):
     """
     Returns player who has the next turn on a board.
     """
-    if (board[0] + board[1] + board[2].count(EMPTY)) % 2 == 1:
+    if (board[0] + board[1] + board[2]).count(EMPTY) % 2 == 1:
         return X
     return O
 
@@ -76,9 +76,14 @@ def winner(board):
             test_down.append(board[j][i])
 
         if test_down.count(X) == 3 or test_down.count(O) == 3:
-            return test[0]
+            return test_down[0]
 
     # winner via 3 diagonal
+    if [board[0][0], board[1][1], board[2][2]].count(X) == 3 or [board[0][0], board[1][1], board[2][2]].count(O) == 3:
+        return board[0][0]
+
+    if [board[0][2], board[1][1], board[2][0]].count(X) == 3 or [board[0][2], board[1][1], board[2][0]].count(O) == 3:
+        return board[0][0]
 
     # else no winner
     return None
@@ -88,14 +93,23 @@ def terminal(board):
     """
     Returns True if game is over, False otherwise.
     """
-    raise NotImplementedError
+    if winner(board) or (board[0] + board[1] + board[2]).count(EMPTY) == 0:
+        return True
+
+    return False
 
 
 def utility(board):
     """
     Returns 1 if X has won the game, -1 if O has won, 0 otherwise.
     """
-    raise NotImplementedError
+
+    if winner(board) == X:
+        return 1
+    elif winner(board) == O:
+        return -1
+    else:
+        return 0
 
 
 def minimax(board):
