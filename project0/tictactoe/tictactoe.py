@@ -50,6 +50,11 @@ def result(board, action):
     """
     Returns the board that results from making move (i, j) on the board.
     """
+    # if invalid action, raise exception
+    row, cell = action[0], action[1]
+    if board[row][cell] != EMPTY:
+        raise Exception("Invalid move.")
+
     board_copy = deepcopy(board)
 
     # determine player making move
@@ -83,7 +88,7 @@ def winner(board):
         return board[0][0]
 
     if [board[0][2], board[1][1], board[2][0]].count(X) == 3 or [board[0][2], board[1][1], board[2][0]].count(O) == 3:
-        return board[0][0]
+        return board[0][2]
 
     # else no winner
     return None
@@ -93,7 +98,7 @@ def terminal(board):
     """
     Returns True if game is over, False otherwise.
     """
-    if winner(board) or (board[0] + board[1] + board[2]).count(EMPTY) == 0:
+    if winner(board) is not None or (board[0] + board[1] + board[2]).count(EMPTY) == 0:
         return True
 
     return False
@@ -116,4 +121,56 @@ def minimax(board):
     """
     Returns the optimal action for the current player on the board.
     """
-    raise NotImplementedError
+    if terminal(board):
+        return None
+
+    if player(board) == X:
+        return max_value(board, board)
+
+    return min_value(board, board)
+
+
+def max_value(board, og):
+    if terminal(board):
+        return utility(board)
+
+    v, goal, potential = -math.inf, 1, {}
+
+    for i, action in enumerate(actions(board)):
+        v = max(v, min_value(result(board, action), og))
+
+        # perform check on moves available from current state
+        if len(actions(board)) - len(actions(og)) == 0:
+            if v == goal:
+                return action
+
+            potential[v] = action
+
+            # all current actions evaluated, return best option
+            if i + 1 == len(actions(board)):
+                return potential[max(potential.keys())]
+
+    return v
+
+
+def min_value(board, og):
+    if terminal(board):
+        return utility(board)
+
+    v, goal, potential = math.inf, -1, {}
+
+    for i, action in enumerate(actions(board)):
+        v = min(v, max_value(result(board, action), og))
+
+        # perform check on moves available from current state
+        if len(actions(board)) - len(actions(og)) == 0:
+            if v == goal:
+                return action
+
+            potential[v] = action
+
+            # all current actions evaluated, return best option
+            if i + 1 == len(actions(board)):
+                return potential[min(potential.keys())]
+
+    return v
