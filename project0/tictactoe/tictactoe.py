@@ -125,9 +125,9 @@ def minimax(board):
         return None
 
     if player(board) == X:
-        return max_value(board, board)
+        return max_value(deepcopy(board), board)
 
-    return min_value(board, board)
+    return min_value(deepcopy(board), board)
 
 
 def max_value(board, og):
@@ -137,14 +137,15 @@ def max_value(board, og):
     v, goal, potential = -math.inf, 1, {}
 
     for i, action in enumerate(actions(board)):
-        v = max(v, min_value(result(board, action), og))
+        val = min_value(result(board, action), og)
+        v = max(v, val)
 
         # perform check on moves available from current state
         if len(actions(board)) - len(actions(og)) == 0:
-            if v == goal:
+            if val == goal:
                 return action
 
-            potential[v] = action
+            potential[val] = action
 
             # all current actions evaluated, return best option
             if i + 1 == len(actions(board)):
@@ -160,14 +161,15 @@ def min_value(board, og):
     v, goal, potential = math.inf, -1, {}
 
     for i, action in enumerate(actions(board)):
-        v = min(v, max_value(result(board, action), og))
+        val = max_value(result(board, action), og)
+        v = min(v, val)
 
         # perform check on moves available from current state
         if len(actions(board)) - len(actions(og)) == 0:
-            if v == goal:
+            if val == goal:
                 return action
 
-            potential[v] = action
+            potential[val] = action
 
             # all current actions evaluated, return best option
             if i + 1 == len(actions(board)):
