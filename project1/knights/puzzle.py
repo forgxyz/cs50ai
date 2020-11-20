@@ -14,6 +14,8 @@ CKnave = Symbol("C is a Knave")
 knowledge0 = And(
     Biconditional(AKnight, Not(AKnave)),
     Biconditional(AKnave, Not(AKnight)),
+
+    # A says "I am both a knight and a knave."
     Implication(AKnight, And(AKnight, AKnave)),
     Implication(AKnave, Not(And(AKnight, AKnave))),
 )
@@ -26,6 +28,8 @@ knowledge1 = And(
     Biconditional(AKnave, Not(AKnight)),
     Biconditional(BKnight, Not(BKnave)),
     Biconditional(BKnave, Not(BKnight)),
+
+    # A says "We are both knaves."
     Implication(AKnight, And(AKnave, BKnave)),
     Implication(AKnave, Not(And(AKnave, BKnave))),
 )
@@ -38,8 +42,12 @@ knowledge2 = And(
     Biconditional(AKnave, Not(AKnight)),
     Biconditional(BKnight, Not(BKnave)),
     Biconditional(BKnave, Not(BKnight)),
+
+    # A says "We are the same kind."
     Implication(AKnight, Or(And(AKnight, BKnight), And(AKnave, BKnave))),
     Implication(AKnave, Not(Or(And(AKnight, BKnight), And(AKnave, BKnave)))),
+
+    # B says "We are of different kinds."
     Implication(BKnight, Or(And(AKnight, BKnave), And(AKnave, BKnight))),
     Implication(BKnave, Not(Or(And(AKnight, BKnave), And(AKnave, BKnight)))),
 )
@@ -57,6 +65,35 @@ knowledge3 = And(
     Biconditional(CKnight, Not(CKnave)),
     Biconditional(CKnave, Not(CKnight)),
 
+    # A says either "I am a knight." or "I am a knave.", but you don't know which.
+    Or(
+        And(
+            Implication(AKnight, AKnight),
+            Implication(AKnave, Not(AKnight))
+        ),
+        And(
+            Implication(AKnight, AKnave),
+            Implication(AKnave, Not(AKnave))
+        )
+    ),
+
+    # B says "A said 'I am a knave'."
+    Implication(BKnight, And(
+        Implication(AKnight, AKnave),
+        Implication(AKnave, Not(AKnave))
+    )),
+    Implication(BKnave, Not(And(
+        Implication(AKnight, AKnave),
+        Implication(AKnave, Not(AKnave))
+    ))),
+
+    # B says "C is a knave."
+    Implication(BKnight, CKnave),
+    Implication(BKnave, Not(CKnave)),
+
+    # C says "A is a knight."
+    Implication(CKnight, AKnight),
+    Implication(CKnave, Not(AKnight)),
 )
 
 
