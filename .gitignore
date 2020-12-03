@@ -1,6 +1,5 @@
+**/assets
+**/.idea
+**/ignore
 **/__pycache__
-**/scratch_files
-src?
 **/venv
-*/ignore/
-*/.idea/

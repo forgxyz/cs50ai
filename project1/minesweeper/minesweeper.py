@@ -105,27 +105,32 @@ class Sentence():
         """
         Returns the set of all cells in self.cells known to be mines.
         """
-        raise NotImplementedError
+        if len(self.cells) == count:
+            return self.cells
 
     def known_safes(self):
         """
         Returns the set of all cells in self.cells known to be safe.
         """
-        raise NotImplementedError
+        if count == 0:
+            return self.cells
 
     def mark_mine(self, cell):
         """
         Updates internal knowledge representation given the fact that
         a cell is known to be a mine.
         """
-        raise NotImplementedError
+        if cell in self.cells:
+            self.count -= 1
+            self.cells.remove(cell)
 
     def mark_safe(self, cell):
         """
         Updates internal knowledge representation given the fact that
         a cell is known to be safe.
         """
-        raise NotImplementedError
+        if cell in self.cells:
+            self.cells.remove(cell)
 
 
 class MinesweeperAI():
@@ -182,7 +187,68 @@ class MinesweeperAI():
             5) add any new sentences to the AI's knowledge base
                if they can be inferred from existing knowledge
         """
-        raise NotImplementedError
+        self.moves_made.add(cell)
+        self.mark_safe(cell)
+
+        # construct sentence - determine surrounding unknowns
+        adjacent = set()
+        for i in range(cell[0] - 1, cell[0] + 2):
+
+            # ensure the selected cell is on the board
+            if i not in range(self.height):
+                continue
+
+            for j in range(cell[1] - 1, cell[1] + 2):
+
+                # ensure the selected cell is on the board
+                if j not in range(self.width):
+                    continue
+
+                # skip if the cell is our current move or previously evaluated
+                if (i, j) == cell or (i, j) in self.safes:
+                    continue
+
+                if (i, j) in self.mines:
+                    count -= 1
+                    continue
+
+                adjacent.add((i, j))
+
+        # add sentence to knowledge base
+        info = Sentence(adjacent, count)
+        self.knowledge.append(info)
+
+        # inference time
+        """
+        1. if sentence is subset of anything in knowledge
+        2. oppo - if anything in kb is subset of sentence
+        """
+        for knowledge in self.knowledge:
+            # knowledge is an instance of sentence where cells is a set
+            # skip if it is itself
+            if knowledge.cells == info.cells:
+                continue
+
+            elif knowledge.cells.issubset(info.cells):
+                inference = Sentence(info.cells - knowledge.cells, info.count - knowledge.count)
+                self.knowledge.append(inference)
+
+            elif knowledge.cells.issuperset(info.cells):
+                inference = Sentence(knowledge.cells - info.cells, knowledge.count - info.count)
+                self.knowledge.append(inference)
+
+        # can we draw any conclusions in the kb?
+        for knowledge in self.knowledge:
+            if len(knowledge.cells) == knowledge.count:
+                cells = knowledge.cells.copy()
+                for cell in cells:
+                    self.mark_mine(cell)
+
+            if knowledge.count == 0:
+                cells = knowledge.cells.copy()
+                for cell in cells:
+                    self.mark_safe(cell)
+
 
     def make_safe_move(self):
         """
@@ -193,7 +259,12 @@ class MinesweeperAI():
         This function may use the knowledge in self.mines, self.safes
         and self.moves_made, but should not modify any of those values.
         """
-        raise NotImplementedError
+
+        for move in self.safes:
+            if move not in self.moves_made:
+                return move
+
+        return None
 
     def make_random_move(self):
         """
@@ -202,4 +273,28 @@ class MinesweeperAI():
             1) have not already been chosen, and
             2) are not known to be mines
         """
-        raise NotImplementedError
+
+        # problem with this is when the board gets tight, it will re-select made moves
+        """while true:
+            i = random.randrange(self.height)
+            j = random.randrange(self.width)
+
+            if (i, j) not in self.mines or (i, j) not in self.moves_made:
+                return (i, j)"""
+
+        # so only select from remaining free spaces
+        board = set()
+        for i in range(self.height):
+            for j in range(self.width):
+                board.add((i, j))
+
+        # parse down to open spaces
+        remaining = board - self.mines - self.moves_made
+
+        # randomly select one of those moves
+        move = random.randrange(len(remaining))
+
+        # cannot index into a set so this is next best, as far as i know
+        for i, cell in enumerate(remaining):
+            if i == move:
+                return cell
