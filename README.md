@@ -4,6 +4,7 @@
 
 the master branch is now my current progress. my first go from april/may is in branch v1 and heredity (evidently that's where i stopped)  
 
+
 ## [to the course](https://cs50.harvard.edu/ai)
 
 ### Directory
