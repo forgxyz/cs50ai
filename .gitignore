@@ -1,6 +1,5 @@
-**/__pycache__
-**/scratch_files
-src?
-**/venv
-*/ignore/
 **/.DS_STORE
+**/.idea
+**/ignore
+**/__pycache__
+**/venv

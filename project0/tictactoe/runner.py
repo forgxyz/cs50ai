@@ -90,7 +90,7 @@ while True:
             tiles.append(row)
 
         game_over = ttt.terminal(board)
-        player, _ = ttt.player(board)
+        player = ttt.player(board)
 
         # Show title
         if game_over:

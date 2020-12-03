@@ -4,4 +4,8 @@
 
 ## [to the course](https://cs50.harvard.edu/ai)
 
-*i stopped work on this over the summer and will re-start in the fall*
+### Directory
+
+- problem set 0
+  - [0a: degrees](https://cs50.harvard.edu/ai/2020/projects/0/degrees/)
+  - [0b tictactoe](https://cs50.harvard.edu/ai/2020/projects/0/tictactoe/)
