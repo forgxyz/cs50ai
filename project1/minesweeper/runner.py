@@ -193,7 +193,7 @@ while True:
             time.sleep(0.2)
 
         # Reset game state
-        elif resetButton.collidepoint(mouse):
+        elif resetButton.collidepoint(mouse):   
             game = Minesweeper(height=HEIGHT, width=WIDTH, mines=MINES)
             ai = MinesweeperAI(height=HEIGHT, width=WIDTH)
             revealed = set()
