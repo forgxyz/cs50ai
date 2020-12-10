@@ -135,6 +135,7 @@ class Sentence():
         """
         if cell in self.cells:
             self.cells.remove(cell)
+        # what about when it is the last cell and the resulting sentence is set() = 0 ??
 
 
 class MinesweeperAI():
@@ -199,14 +200,19 @@ class MinesweeperAI():
         for i in range(cell[0] - 1, cell[0] + 2):
             for j in range(cell[1] - 1, cell[1] + 2):
                 # skip if the cell is our current move or previously evaluated
-                if (i, j) == cell:
+                if (i, j) == cell or (i, j) in self.safes:
                     continue
 
-                # check if cell is a legal space
+                # if we know it is a mine, pull cell out of sentence
+                if (i, j) in self.mines:
+                    count -= 1
+                    continue
+
+                # check if cell is a legal space before adding
                 if 0 <= i < self.height and 0 <= j < self.width:
                     adjacent.add((i, j))
 
-        # add sentence to knowledge base unless all eval'd were safe
+        # add sentence to knowledge base
         info = Sentence(adjacent, count)
 
         # if no nearby mines, mark all safe
@@ -215,32 +221,36 @@ class MinesweeperAI():
                 self.mark_safe(cell)
 
         # otherwise, add sentence to kb
-        else:
+        elif info.count > 0:
             self.knowledge.append(info)
 
         # inference time
-        """
-        1. if sentence is subset of anything in knowledge
-        2. oppo - if anything in kb is subset of sentence
-        """
         # can we draw any conclusions in the kb?
         for sentence in self.knowledge:
             for cell in sentence.known_mines().copy():
                 self.mark_mine(cell)
 
-        for knowledge in self.knowledge:
-            # knowledge is an instance of sentence where cells is a set
-            # skip if it is itself
-            if knowledge.cells == info.cells or len(knowledge.cells) == 0 or len(info.cells) == 0:
-                continue
+            for cell in sentence.known_safes().copy():
+                self.mark_safe(cell)
 
-            if knowledge.cells.issubset(info.cells):
-                inference = Sentence(info.cells - knowledge.cells, info.count - knowledge.count)
-                self.knowledge.append(inference)
+            if len(sentence.cells) == 0:
+                # in this instance, we would have run mark_safe on a sentence and left with set() = 0
+                self.knowledge.remove(sentence)
 
-            if knowledge.cells.issuperset(info.cells):
-                inference = Sentence(knowledge.cells - info.cells, knowledge.count - info.count)
-                self.knowledge.append(inference)
+        if info.count > 0:
+            for knowledge in self.knowledge:
+                # knowledge is an instance of sentence where cells is a set
+                # skip if it is itself
+                if knowledge.cells == info.cells:
+                    continue
+
+                if knowledge.cells.issubset(info.cells):
+                    inference = Sentence(info.cells - knowledge.cells, info.count - knowledge.count)
+                    self.knowledge.append(inference)
+
+                if knowledge.cells.issuperset(info.cells):
+                    inference = Sentence(knowledge.cells - info.cells, knowledge.count - info.count)
+                    self.knowledge.append(inference)
 
 
     def make_safe_move(self):
