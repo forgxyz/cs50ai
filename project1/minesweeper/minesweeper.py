@@ -105,15 +105,19 @@ class Sentence():
         """
         Returns the set of all cells in self.cells known to be mines.
         """
-        if len(self.cells) == count:
+        if len(self.cells) == self.count:
             return self.cells
+
+        return []
 
     def known_safes(self):
         """
         Returns the set of all cells in self.cells known to be safe.
         """
-        if count == 0:
+        if self.count == 0:
             return self.cells
+
+        return []
 
     def mark_mine(self, cell):
         """
@@ -193,61 +197,50 @@ class MinesweeperAI():
         # construct sentence - determine surrounding unknowns
         adjacent = set()
         for i in range(cell[0] - 1, cell[0] + 2):
-
-            # ensure the selected cell is on the board
-            if i not in range(self.height):
-                continue
-
             for j in range(cell[1] - 1, cell[1] + 2):
-
-                # ensure the selected cell is on the board
-                if j not in range(self.width):
-                    continue
-
                 # skip if the cell is our current move or previously evaluated
-                if (i, j) == cell or (i, j) in self.safes:
+                if (i, j) == cell:
                     continue
 
-                if (i, j) in self.mines:
-                    count -= 1
-                    continue
+                # check if cell is a legal space
+                if 0 <= i < self.height and 0 <= j < self.width:
+                    adjacent.add((i, j))
 
-                adjacent.add((i, j))
-
-        # add sentence to knowledge base
+        # add sentence to knowledge base unless all eval'd were safe
         info = Sentence(adjacent, count)
-        self.knowledge.append(info)
+
+        # if no nearby mines, mark all safe
+        if info.count == 0:
+            for cell in info.known_safes().copy():
+                self.mark_safe(cell)
+
+        # otherwise, add sentence to kb
+        else:
+            self.knowledge.append(info)
 
         # inference time
         """
         1. if sentence is subset of anything in knowledge
         2. oppo - if anything in kb is subset of sentence
         """
+        # can we draw any conclusions in the kb?
+        for sentence in self.knowledge:
+            for cell in sentence.known_mines().copy():
+                self.mark_mine(cell)
+
         for knowledge in self.knowledge:
             # knowledge is an instance of sentence where cells is a set
             # skip if it is itself
-            if knowledge.cells == info.cells:
+            if knowledge.cells == info.cells or len(knowledge.cells) == 0 or len(info.cells) == 0:
                 continue
 
-            elif knowledge.cells.issubset(info.cells):
+            if knowledge.cells.issubset(info.cells):
                 inference = Sentence(info.cells - knowledge.cells, info.count - knowledge.count)
                 self.knowledge.append(inference)
 
-            elif knowledge.cells.issuperset(info.cells):
+            if knowledge.cells.issuperset(info.cells):
                 inference = Sentence(knowledge.cells - info.cells, knowledge.count - info.count)
                 self.knowledge.append(inference)
-
-        # can we draw any conclusions in the kb?
-        for knowledge in self.knowledge:
-            if len(knowledge.cells) == knowledge.count:
-                cells = knowledge.cells.copy()
-                for cell in cells:
-                    self.mark_mine(cell)
-
-            if knowledge.count == 0:
-                cells = knowledge.cells.copy()
-                for cell in cells:
-                    self.mark_safe(cell)
 
 
     def make_safe_move(self):
