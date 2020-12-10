@@ -200,8 +200,12 @@ class MinesweeperAI():
         for i in range(cell[0] - 1, cell[0] + 2):
             for j in range(cell[1] - 1, cell[1] + 2):
                 # skip if the cell is our current move or previously evaluated
-                if (i, j) == cell or (i, j) in self.safes:
+                if (i, j) in self.moves_made:
                     continue
+
+                if count == 0:
+                    if 0 <= i < self.height and 0 <= j < self.width:
+                        self.mark_safe((i, j))
 
                 # if we know it is a mine, pull cell out of sentence
                 if (i, j) in self.mines:
@@ -214,28 +218,20 @@ class MinesweeperAI():
 
         # add sentence to knowledge base
         info = Sentence(adjacent, count)
-
-        # if no nearby mines, mark all safe
-        if info.count == 0:
-            for cell in info.known_safes().copy():
-                self.mark_safe(cell)
-
-        # otherwise, add sentence to kb
-        elif info.count > 0:
+        if count > 0:
             self.knowledge.append(info)
-
         # inference time
         # can we draw any conclusions in the kb?
-        for sentence in self.knowledge:
-            for cell in sentence.known_mines().copy():
-                self.mark_mine(cell)
-
-            for cell in sentence.known_safes().copy():
-                self.mark_safe(cell)
-
-            if len(sentence.cells) == 0:
-                # in this instance, we would have run mark_safe on a sentence and left with set() = 0
-                self.knowledge.remove(sentence)
+        # for sentence in self.knowledge:
+        #     for cell in sentence.known_mines().copy():
+        #         self.mark_mine(cell)
+        #
+        #     for cell in sentence.known_safes().copy():
+        #         self.mark_safe(cell)
+        #
+        #     if len(sentence.cells) == 0:
+        #         # in this instance, we would have run mark_safe on a sentence and left with set() = 0
+        #         self.knowledge.remove(sentence)
 
         if info.count > 0:
             for knowledge in self.knowledge:
@@ -245,12 +241,31 @@ class MinesweeperAI():
                     continue
 
                 if knowledge.cells.issubset(info.cells):
-                    inference = Sentence(info.cells - knowledge.cells, info.count - knowledge.count)
-                    self.knowledge.append(inference)
+                    # check if we can make any conclusions
+                    if info.count - knowledge.count == 0:
+                        for cell in info.cells.difference(knowledge.cells):
+                            self.mark_safe(cell)
+
+                    elif len(info.cells.difference(knowledge.cells)) == info.count - knowledge.count:
+                        for cell in info.cells.difference(knowledge.cells):
+                            self.mark_mine(cell)
+
+                    # if not, add new sentence to kb
+                    else:
+                        self.knowledge.append(Sentence(info.cells.difference(knowledge.cells), info.count - knowledge.count))
 
                 if knowledge.cells.issuperset(info.cells):
-                    inference = Sentence(knowledge.cells - info.cells, knowledge.count - info.count)
-                    self.knowledge.append(inference)
+
+                    if knowledge.count - info.count == 0:
+                        for cell in knowledge.cells.difference(info.cells):
+                            self.mark_safe(cell)
+
+                    elif len(knowledge.cells.difference(info.cells)) == knowledge.count - info.count:
+                        for cell in knowledge.cells.difference(info.cells):
+                            self.mark_mine(cell)
+
+                    else:
+                        self.knowledge.append(Sentence(knowledge.cells.difference(info.cells), knowledge.count - info.count))
 
 
     def make_safe_move(self):
