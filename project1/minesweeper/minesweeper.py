@@ -108,16 +108,12 @@ class Sentence():
         if len(self.cells) == self.count:
             return self.cells
 
-        return []
-
     def known_safes(self):
         """
         Returns the set of all cells in self.cells known to be safe.
         """
         if self.count == 0:
             return self.cells
-
-        return []
 
     def mark_mine(self, cell):
         """
@@ -199,73 +195,74 @@ class MinesweeperAI():
         adjacent = set()
         for i in range(cell[0] - 1, cell[0] + 2):
             for j in range(cell[1] - 1, cell[1] + 2):
-                # skip if the cell is our current move or previously evaluated
-                if (i, j) in self.moves_made:
-                    continue
 
-                if count == 0:
-                    if 0 <= i < self.height and 0 <= j < self.width:
-                        self.mark_safe((i, j))
-
-                # if we know it is a mine, pull cell out of sentence
-                if (i, j) in self.mines:
-                    count -= 1
-                    continue
-
-                # check if cell is a legal space before adding
+                # only evaluate legal spaces
                 if 0 <= i < self.height and 0 <= j < self.width:
+
+                    # skip if previously evaluated
+                    if (i, j) in self.safes:
+                        continue
+
+                    # mark adjacent as safe if no mines nearby
+                    if count == 0:
+                        self.mark_safe((i, j))
+                        continue
+
+                    # if we know it is a mine, pull cell out of sentence
+                    if (i, j) in self.mines:
+                        count -= 1
+                        continue
+
+                    # if it passes these checks, add to the set
                     adjacent.add((i, j))
 
         # add sentence to knowledge base
-        info = Sentence(adjacent, count)
-        if count > 0:
-            self.knowledge.append(info)
-        # inference time
-        # can we draw any conclusions in the kb?
-        # for sentence in self.knowledge:
-        #     for cell in sentence.known_mines().copy():
-        #         self.mark_mine(cell)
-        #
-        #     for cell in sentence.known_safes().copy():
-        #         self.mark_safe(cell)
-        #
-        #     if len(sentence.cells) == 0:
-        #         # in this instance, we would have run mark_safe on a sentence and left with set() = 0
-        #         self.knowledge.remove(sentence)
+        # ignore count == 0 because known to be safe
+        # ignore potential empty set
 
-        if info.count > 0:
+        if count > 0 and len(adjacent) > 0:
+            self.knowledge.append(Sentence(adjacent, count))
+
             for knowledge in self.knowledge:
-                # knowledge is an instance of sentence where cells is a set
-                # skip if it is itself
-                if knowledge.cells == info.cells:
+                if len(knowledge.cells) == 0:
+                    self.knowledge.remove(knowledge)
                     continue
 
-                if knowledge.cells.issubset(info.cells):
+                # skip if it is itself
+                if knowledge.cells == adjacent:
+                    continue
+
+                if len(knowledge.cells) == knowledge.count:
+                    for cell in knowledge.cells.copy():
+                        self.mark_mine(cell)
+                        continue
+
+                if knowledge.cells.issubset(adjacent):
                     # check if we can make any conclusions
-                    if info.count - knowledge.count == 0:
-                        for cell in info.cells.difference(knowledge.cells):
+                    if count - knowledge.count == 0:
+                        for cell in adjacent.difference(knowledge.cells):
                             self.mark_safe(cell)
 
-                    elif len(info.cells.difference(knowledge.cells)) == info.count - knowledge.count:
-                        for cell in info.cells.difference(knowledge.cells):
+                    elif len(adjacent.difference(knowledge.cells)) == count - knowledge.count:
+                        for cell in adjacent.difference(knowledge.cells):
                             self.mark_mine(cell)
 
                     # if not, add new sentence to kb
                     else:
-                        self.knowledge.append(Sentence(info.cells.difference(knowledge.cells), info.count - knowledge.count))
+                        self.knowledge.append(Sentence(adjacent.difference(knowledge.cells), count - knowledge.count))
 
-                if knowledge.cells.issuperset(info.cells):
+                if knowledge.cells.issuperset(adjacent):
 
-                    if knowledge.count - info.count == 0:
-                        for cell in knowledge.cells.difference(info.cells):
+                    if knowledge.count - count == 0:
+                        for cell in knowledge.cells.difference(adjacent):
                             self.mark_safe(cell)
 
-                    elif len(knowledge.cells.difference(info.cells)) == knowledge.count - info.count:
-                        for cell in knowledge.cells.difference(info.cells):
+                    elif len(knowledge.cells.difference(adjacent)) == knowledge.count - count:
+                        for cell in knowledge.cells.difference(adjacent):
                             self.mark_mine(cell)
 
                     else:
-                        self.knowledge.append(Sentence(knowledge.cells.difference(info.cells), knowledge.count - info.count))
+                        self.knowledge.append(Sentence(knowledge.cells.difference(adjacent), knowledge.count - count))
 
 
     def make_safe_move(self):
@@ -299,6 +296,9 @@ class MinesweeperAI():
 
             if (i, j) not in self.mines or (i, j) not in self.moves_made:
                 return (i, j)"""
+
+        if len(self.moves_made) + len(self.mines) == self.height * self.width:
+            return None
 
         # so only select from remaining free spaces
         board = set()
