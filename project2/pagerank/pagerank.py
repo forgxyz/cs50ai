@@ -114,25 +114,40 @@ def iterate_pagerank(corpus, damping_factor):
     """
 
     # start with equal ranks
-    pagerank = dict()
+    pagerank, check = dict(), dict()
+
     for page in corpus.keys():
         pagerank[page] = 1 / len(corpus.keys())
+        check[page] = False
 
-    # pagerank formula
-    # equal odds of random selection
-    random_page = (1 - damping_factor) / len(corpus.keys())
+    while True:
+        # iterate through corpus until convergence
+        for p in corpus.keys():
+            # iterate through all pages I that link to current page p
+            # so will need list, based on corpus, of all the pages that have a link to p in corpus.values()
+            incoming = []
+            for k, v in corpus.items():
+                if p in v:
+                    incoming.append(k)
+                if len(v) == 0:
+                    incoming = [page for page in corpus.keys()]
 
-    # iterate through all pages I that link to current page p
-    # so will need list, based on corpus, of all the pages that have a link to p in corpus.values()
-    for i corpus.values():
-        # but what is my current page?
+            sum = 0
+            # then while iterating through those, recursively call iterate_pagerank again
+            # this isn't recursion ... it's just calling the static pagerank of i ...
+            for i in incoming:
+                sum += (pagerank[i] / len(corpus[i]))
 
-    # then while iterating through those, recursively call iterate_pagerank again
-    # this is why we need a starting point - return the pagerank up the recursive chain
-    # when the pagerank changes < .001, we have reached convergence and should return a dict rather than a value
+            pr = ((1 - damping_factor) / len(corpus.keys())) + (damping_factor * sum)
 
+            # when the pagerank changes < .001, we have reached convergence and should return a dict rather than a value
+            if abs(pagerank[p] - pr) < .001:
+                check[p] = True
+            pagerank[p] = pr
 
-    raise NotImplementedError
+            # return only when all converge
+            if False not in check.values():
+                return pagerank
 
 
 if __name__ == "__main__":
