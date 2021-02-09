@@ -57,7 +57,19 @@ def transition_model(corpus, page, damping_factor):
     linked to by `page`. With probability `1 - damping_factor`, choose
     a link at random chosen from all pages in the corpus.
     """
-    raise NotImplementedError
+    distribution = dict()
+
+    # per crawl(), corpus will not include link to itself or duplicates
+    # load probability distribution with chance of randomly selecting a page
+    for link in corpus:
+        distribution[link] = (1 - damping_factor) / len(corpus)
+
+    # add odds surfer choose a link on the page
+    for link in corpus[page]:
+        # add % chance they choose a link on page
+        distribution[link] += damping_factor / len(corpus[page])
+
+    return distribution
 
 
 def sample_pagerank(corpus, damping_factor, n):
@@ -69,7 +81,26 @@ def sample_pagerank(corpus, damping_factor, n):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    raise NotImplementedError
+
+    # create dict to be returned
+    pagerank = dict()
+    for page in corpus.keys():
+        pagerank[page] = 0
+
+    # sample page n times and record in pagerank
+    for i in range(n):
+        if i == 0:
+            # first sample: choose a page a random
+            page = random.choice(list(corpus.keys()))
+
+        # for every sample, record the choice
+        pagerank[page] += 1/n
+        distribution = transition_model(corpus, page, damping_factor)
+
+        # select next page based on probability distribution from transition_model
+        page = random.choices(list(distribution.keys()), weights=list(distribution.values()))[0]
+
+    return pagerank
 
 
 def iterate_pagerank(corpus, damping_factor):
@@ -81,6 +112,26 @@ def iterate_pagerank(corpus, damping_factor):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
+
+    # start with equal ranks
+    pagerank = dict()
+    for page in corpus.keys():
+        pagerank[page] = 1 / len(corpus.keys())
+
+    # pagerank formula
+    # equal odds of random selection
+    random_page = (1 - damping_factor) / len(corpus.keys())
+
+    # iterate through all pages I that link to current page p
+    # so will need list, based on corpus, of all the pages that have a link to p in corpus.values()
+    for i corpus.values():
+        # but what is my current page?
+
+    # then while iterating through those, recursively call iterate_pagerank again
+    # this is why we need a starting point - return the pagerank up the recursive chain
+    # when the pagerank changes < .001, we have reached convergence and should return a dict rather than a value
+
+
     raise NotImplementedError
 
 
