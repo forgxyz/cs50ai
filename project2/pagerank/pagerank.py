@@ -129,8 +129,6 @@ def iterate_pagerank(corpus, damping_factor):
             for k, v in corpus.items():
                 if p in v:
                     incoming.append(k)
-                if len(v) == 0:
-                    incoming = [page for page in corpus.keys()]
 
             sum = 0
             # then while iterating through those, recursively call iterate_pagerank again
