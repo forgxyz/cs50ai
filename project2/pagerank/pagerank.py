@@ -113,22 +113,25 @@ def iterate_pagerank(corpus, damping_factor):
     PageRank values should sum to 1.
     """
 
-    # start with equal ranks
+    # init dicts to store pageranks and T/F flags for convergence
     pagerank, check = dict(), dict()
 
+    # if page has no outbound links, treat as if it links to everything 
+    for page, links in corpus.items():
+        if len(links) == 0:
+            corpus[page] = [page for page in corpus.keys()]
+
+    # start with equal ranks
     for page in corpus.keys():
         pagerank[page] = 1 / len(corpus.keys())
         check[page] = False
 
+    # iterate through corpus until convergence
     while True:
-        # iterate through corpus until convergence
+        # iterate through all pages I that link to current page p
         for p in corpus.keys():
-            # iterate through all pages I that link to current page p
             # so will need list, based on corpus, of all the pages that have a link to p in corpus.values()
-            incoming = []
-            for k, v in corpus.items():
-                if p in v:
-                    incoming.append(k)
+            incoming = [page for page, links in corpus.items() if p in links]
 
             sum = 0
             # then while iterating through those, recursively call iterate_pagerank again
