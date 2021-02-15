@@ -139,6 +139,9 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         * everyone in set `have_trait` has the trait, and
         * everyone not in set` have_trait` does not have the trait.
     """
+
+    # they are all sets so, to infer the no_gene and no_trait, can use set subtraction / difference()
+
     raise NotImplementedError
 
 
