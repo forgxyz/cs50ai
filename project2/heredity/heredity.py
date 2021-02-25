@@ -142,6 +142,32 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         * everyone in set `have_trait` has the trait, and
         * everyone not in set` have_trait` does not have the trait.
     """
+    # compute unconditional probability of showing trait, using given distributions
+    # per conditioning P(trait) = P(trait | gX)*P(gX) where gX represents num genes
+    PROBS['trait']['unconditional'] = {True: 0, False: 0}
+    for gene in PROBS['gene']:
+        PROBS['trait']['unconditional'][True] += PROBS['gene'][gene] * PROBS['trait'][gene][True]
+        PROBS['trait']['unconditional'][False] += PROBS['gene'][gene] * PROBS['trait'][gene][False]
+
+    # use marginalization to determine P(g | t) = P(g, t) / P(t) and P(g, t) = P(g)*P(t | g)
+    # so P(g | t) = P(g)*P(t | g) / P(t)
+    PROBS['gene']['conditional'] = {
+        0: {'trait': 0, 'no_trait': 0},
+        1: {'trait': 0, 'no_trait': 0},
+        2: {'trait': 0, 'no_trait': 0},
+    }
+
+    for gene in PROBS['gene']:
+
+        # necessary because i added 'conditional' to gene
+        if type(gene) is not int:
+            break
+        PROBS['gene']['conditional'][gene]['trait'] = (PROBS['gene'][gene] * PROBS['trait'][gene][True]) / PROBS['trait']['unconditional'][True]
+        PROBS['gene']['conditional'][gene]['no_trait'] = (PROBS['gene'][gene] * PROBS['trait'][gene][False]) / PROBS['trait']['unconditional'][False]
+
+    # TODO ... that was a lot of setup, i should move that out of this function
+    # yea that's bc this is not the way to do this...
+
 
     # they are all sets so, to infer the no_gene and no_trait, can use set subtraction / difference()
     # i could probably do if person not in have_trait but w/e
@@ -156,7 +182,10 @@ def joint_probability(people, one_gene, two_genes, have_trait):
             # if parent, this is dependent on trait or do we use unconditional prob?
             if people[person]['father'] == None and people[person]['mother'] == None:
                 # this person is a parent in the set
-                people[person]['odds'] = PROBS[gene][0] # but i don't think using the unconditional probability is right bc we can see trait and infer genes based on trait. it is not independent 
+                if person in trait:
+                    PROBS['gene']['conditional'][0][True] # this is the probability of having 0 genes while showing trait
+                    PROBS['trait'][0][True] # this is the probability of showing trait w 0 genes
+                continue
             continue
 
         if person in one_gene:
@@ -189,6 +218,7 @@ def update(probabilities, one_gene, two_genes, have_trait, p):
     Which value for each distribution is updated depends on whether
     the person is in `have_gene` and `have_trait`, respectively.
     """
+    # TODO
     raise NotImplementedError
 
 
@@ -197,6 +227,7 @@ def normalize(probabilities):
     Update `probabilities` such that each probability distribution
     is normalized (i.e., sums to 1, with relative proportions the same).
     """
+    # TODO
     raise NotImplementedError
 
 
