@@ -14,18 +14,21 @@ PROBS = {
     "trait": {
 
         # Probability of trait given two copies of gene
+        # P(t | g2)
         2: {
             True: 0.65,
             False: 0.35
         },
 
         # Probability of trait given one copy of gene
+        # P(t | g1)
         1: {
             True: 0.56,
             False: 0.44
         },
 
         # Probability of trait given no gene
+        # P(t | g0)
         0: {
             True: 0.01,
             False: 0.99
@@ -141,6 +144,40 @@ def joint_probability(people, one_gene, two_genes, have_trait):
     """
 
     # they are all sets so, to infer the no_gene and no_trait, can use set subtraction / difference()
+    # i could probably do if person not in have_trait but w/e
+    no_genes = set(people) - one_gene - two_genes
+    no_trait = set(people) - have_trait
+
+    # loop thru available people and compute odds of their situation
+    for person in people:
+
+        if person in no_genes:
+            # if child, this is dependent on parents
+            # if parent, this is dependent on trait or do we use unconditional prob?
+            if people[person]['father'] == None and people[person]['mother'] == None:
+                # this person is a parent in the set
+                people[person]['odds'] = PROBS[gene][0] # but i don't think using the unconditional probability is right bc we can see trait and infer genes based on trait. it is not independent 
+            continue
+
+        if person in one_gene:
+            # determine odds of having 1 gene
+            # maybe if trait is not none, we do one thing, if given we do another
+            continue
+
+        if person in two_genes:
+            # similar method to above
+            continue
+
+        # now handle trait
+        if person in no_trait:
+            # check if trait is given or to be computed
+            if people[person]['trait'] is not None:
+                odds = 1 if people[person]['trait'] else 0
+            # otherwise their probability distribution is dependent on their genes
+            continue
+
+        if person in trait:
+            continue
 
     raise NotImplementedError
 
