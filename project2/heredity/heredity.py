@@ -142,74 +142,72 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         * everyone in set `have_trait` has the trait, and
         * everyone not in set` have_trait` does not have the trait.
     """
-    # # compute unconditional probability of showing trait, using given distributions
-    # # per conditioning P(trait) = P(trait | gX)*P(gX) where gX represents num genes
-    # PROBS['trait']['unconditional'] = {True: 0, False: 0}
-    # for gene in PROBS['gene']:
-    #     PROBS['trait']['unconditional'][True] += PROBS['gene'][gene] * PROBS['trait'][gene][True]
-    #     PROBS['trait']['unconditional'][False] += PROBS['gene'][gene] * PROBS['trait'][gene][False]
-    #
-    # # use marginalization to determine P(g | t) = P(g, t) / P(t) and P(g, t) = P(g)*P(t | g)
-    # # so P(g | t) = P(g)*P(t | g) / P(t)
-    # PROBS['gene']['conditional'] = {
-    #     0: {'trait': 0, 'no_trait': 0},
-    #     1: {'trait': 0, 'no_trait': 0},
-    #     2: {'trait': 0, 'no_trait': 0},
-    # }
-    #
-    # for gene in PROBS['gene']:
-    #
-    #     # necessary because i added 'conditional' to gene
-    #     if type(gene) is not int:
-    #         break
-    #     PROBS['gene']['conditional'][gene]['trait'] = (PROBS['gene'][gene] * PROBS['trait'][gene][True]) / PROBS['trait']['unconditional'][True]
-    #     PROBS['gene']['conditional'][gene]['no_trait'] = (PROBS['gene'][gene] * PROBS['trait'][gene][False]) / PROBS['trait']['unconditional'][False]
-    #
-    # # TODO ... that was a lot of setup, i should move that out of this function
-    # # yea that's bc this is not the way to do this...
-
-
-    # they are all sets so, to infer the no_gene and no_trait, can use set subtraction / difference()
-    # i could probably do if person not in have_trait but w/e
-    no_genes = set(people) - one_gene - two_genes
-    no_trait = set(people) - have_trait
     odds = 1
+
     # loop thru available people and compute joint probability of situation
     for person in people:
+        # determine parents gene count for later use
+        if people[person]['father'] in two_genes:
+            father_pass_odds = 1 - PROBS['mutation']
+            father_not_pass_odds = 1 - father_pass_odds
+        elif people[person]['father'] in one_gene:
+            father_pass_odds = 0.50
+            father_not_pass_odds = 1 - father_pass_odds
+        else:
+            father_pass_odds = PROBS['mutation']
+            father_not_pass_odds = 1 - father_pass_odds
 
-        if person in no_genes:
-
-            if people[person]['mother'] is not None and people[person]['father'] is not None:
-                odds *= PROBS['gene'][0]
-            else:
-                # child
-                # TODO - this is where i am having some conceptual trouble
-                # if child and testing for 0 genes, what info do we know / can we pull about parents at this point?
-                # parents could be one of 9 genetic combinations, is that just a loop? a superset?
-
-            if person in have_trait:
-                odds *= PROBS['trait'][0][True]
-            else:
-                odds *= PROBS['trait'][0][False]
-
-            # UNLESS it is child then gene is dependent on parents and we cannot use the given unconditional
-            # P(t | g) does not need to change
-
-
-        if person in one_gene:
-            odds *= PROBS['gene'][1]
-            if person in have_trait:
-                odds *= PROBS['trait'][1][True]
-            else:
-                odds *= PROBS['trait'][1][False]
+        if people[person]['mother'] in two_genes:
+            mother_pass_odds = 1 - PROBS['mutation']
+            mother_not_pass_odds = 1 - mother_pass_odds
+        elif people[person]['mother'] in one_gene:
+            mother_pass_odds = 0.50
+            mother_not_pass_odds = 1 - mother_pass_odds
+        else:
+            mother_pass_odds = PROBS['mutation']
+            mother_not_pass_odds = 1 - mother_pass_odds
 
         if person in two_genes:
-            odds *= PROBS['gene'][2]
+            if people[person]['mother'] is None and people[person]['father'] is None:
+                odds *= PROBS['gene'][2]
+            else:
+                # must get 1 from each parent
+                odds *= father_pass_odds * mother_pass_odds
+
             if person in have_trait:
                 odds *= PROBS['trait'][2][True]
             else:
                 odds *= PROBS['trait'][2][False]
 
+        elif person in one_gene:
+            if people[person]['mother'] is None and people[person]['father'] is None:
+                odds *= PROBS['gene'][1]
+
+            else:
+                # odds child has 1 gene is odds 1 parent passed along and other did not
+                # pass from father not mother
+                pass_odds = father_pass_odds * mother_not_pass_odds
+                # pass from mother not father
+                pass_odds += mother_pass_odds * father_not_pass_odds
+                odds *= pass_odds
+
+            if person in have_trait:
+                odds *= PROBS['trait'][1][True]
+            else:
+                odds *= PROBS['trait'][1][False]
+
+        else:
+            if people[person]['mother'] is None and people[person]['father'] is None:
+                odds *= PROBS['gene'][0]
+            else:
+                # odds child has 0 genes is odds neither parent passed along
+                # pass from neither father nor mother
+                odds *= father_not_pass_odds * mother_not_pass_odds
+
+            if person in have_trait:
+                odds *= PROBS['trait'][0][True]
+            else:
+                odds *= PROBS['trait'][0][False]
     return odds
 
 
@@ -220,8 +218,18 @@ def update(probabilities, one_gene, two_genes, have_trait, p):
     Which value for each distribution is updated depends on whether
     the person is in `have_gene` and `have_trait`, respectively.
     """
-    # TODO
-    raise NotImplementedError
+    for person in probabilities:
+        if person in two_genes:
+            probabilities[person]['gene'][2] += p
+        elif person in one_gene:
+            probabilities[person]['gene'][1] += p
+        else:
+            probabilities[person]['gene'][0] += p
+
+        if person in have_trait:
+            probabilities[person]['trait'][True] += p
+        else:
+            probabilities[person]['trait'][False] += p
 
 
 def normalize(probabilities):
@@ -229,8 +237,18 @@ def normalize(probabilities):
     Update `probabilities` such that each probability distribution
     is normalized (i.e., sums to 1, with relative proportions the same).
     """
-    # TODO
-    raise NotImplementedError
+    for person in probabilities:
+        temp = 0
+        for gene, p in probabilities[person]['gene'].items():
+            temp += p
+        for gene, p in probabilities[person]['gene'].items():
+            probabilities[person]['gene'][gene] = p / temp
+
+        temp = 0
+        for trait, p in probabilities[person]['trait'].items():
+            temp += p
+        for trait, p in probabilities[person]['trait'].items():
+            probabilities[person]['trait'][trait] = p / temp
 
 
 if __name__ == "__main__":
