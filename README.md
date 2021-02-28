@@ -16,3 +16,7 @@ the master branch is now my current progress. my first go from april/may is in b
 - problem set 1
   - [1a: knights](https://cs50.harvard.edu/ai/2020/projects/1/knights/)
   - [1b: minesweeper](https://cs50.harvard.edu/ai/2020/projects/1/minesweeper/)
+
+- problem set 2
+  - [2a: pagerank](https://cs50.harvard.edu/ai/2020/projects/2/pagerank/)
+  - [2b: heredity](https://cs50.harvard.edu/ai/2020/projects/2/heredity/)
