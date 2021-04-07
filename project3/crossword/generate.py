@@ -103,9 +103,13 @@ class CrosswordCreator():
         # loop thru self.domain to access each variable
         for var, domain in self.domains.items():
             # remove words that do not fit the length of the space
+            inconsistent = []
             for word in domain:
                 if len(word) != var.length:
-                    self.domains[var].remove(word)
+                    inconsistent.append(word)
+
+            for word in inconsistent:
+                self.domains[var].remove(word)
 
     def revise(self, x, y):
         """
@@ -127,6 +131,7 @@ class CrosswordCreator():
 
         # get overlapping values between vars x and y, return value will be some pair (i, j)
         i, j = self.crossword.overlaps[x, y]
+        removable = []
         for x_word in self.domains[x]:
             # flag resets for each x_word
             flag = 0
@@ -135,10 +140,15 @@ class CrosswordCreator():
                     # x is arc consistent with y if there is a value in the domain of y
                     # not editing y here, just looking for at least 1 matching word for each in x domain
                     flag = 1
+
             # if flag not triggered, then none of the values in domain y match the current x word
             if not flag:
-                self.domains[x].remove(x_word)
+                removable.append(x_word)
                 revised = True
+
+        # removing from domain here as i was triggering an error for changing set during iteration
+        for x_word in removable:
+            self.domains[x].remove(x_word)
 
         return revised
 
@@ -154,6 +164,7 @@ class CrosswordCreator():
         # setup
         # queue = arcs
         if arcs is None:
+            arcs = []
             # grab all neighbor pairs in the problem and add them to arcs
             for pair, overlaps in self.crossword.overlaps.items():
                 # Crossword.overlaps is dict of ALL pairs, need just the ones w overlap
@@ -165,9 +176,10 @@ class CrosswordCreator():
             # loop thru arcs until it is empty
             # grab one arc (pair of variables that are neighbors) & remove it from the queue as we are now considering it
             x, y = arcs.pop()
+
             # run it thru revise()
             # if false - nothing was changed do nothing, if true - x was changed
-            if revise(self, x, y):
+            if self.revise(x, y):
                 if len(self.domains[x]) == 0:
                 # check length of domain, if 0 then we cannot solve
                     return False
@@ -228,28 +240,28 @@ class CrosswordCreator():
         that rules out the fewest values among the neighbors of `var`.
         """
         # setup
-        tally = {word: 0 for word in self.crossword.domains[var]}
-        neighbors = self.crossword.neighbors(self, var)
+        tally = {word: 0 for word in self.domains[var]}
+        neighbors = self.crossword.neighbors(var)
 
         # loop
         for word in self.domains[var]:
             # basically check how many words violate the constraints in neighbor's domain
             # so we select word A from the domain
             # loop thru the domain of var's neighbor(s)
-            for neigh in neighbor:
+            for neigh in neighbors:
                 # if neighbor is in assignment, don't count it
                 if neigh in assignment.keys():
                     continue
 
                 i, j = self.crossword.overlaps[var, neigh]
-                for neigh_word in self.crossword.domains[neigh]:
+                for neigh_word in self.domains[neigh]:
                     # check each of those words for consistency w overlap (& unique constraint?)
                     if word[i] != neigh_word[j]:
                         tally[word] += 1
                     if word == neigh_word:
                         tally[word] += 1
 
-        least_constraining_domain = sorted(self.crossword.domains[var], key=tally.__getitem__)
+        least_constraining_domain = sorted(self.domains[var], key=tally.__getitem__)
         return least_constraining_domain
 
 
@@ -262,7 +274,8 @@ class CrosswordCreator():
         return values.
         """
         # setup
-        hueristics = {var: {'mrv': 0, 'ld': 0} for var in self.crossword.variables if var not in assignment.keys()}
+        mrv_hueristic = {var: 0 for var in self.crossword.variables if var not in assignment.keys()}
+        ld_hueristic = {var: 0 for var in self.crossword.variables if var not in assignment.keys()}
 
         # loop
         for var in self.crossword.variables:
@@ -271,12 +284,12 @@ class CrosswordCreator():
                 continue
 
             # compute minimum remaining value hueristic
-            hueristics[var]['mrv'] = len(self.crosswords.domains[var])
+            mrv_hueristic[var] = len(self.domains[var])
 
             # compute largest degree hueristic
-            hueristics[var]['ld'] = len(self.crossword.neighbors(self, var))
+            ld_hueristic[var] = len(self.crossword.neighbors(var))
 
-        temp = sorted([var for var in self.crossword.variables if var not in assignment.keys()], key=hueristics['mrv'].__getitem__)
+        temp = sorted([var for var in self.crossword.variables if var not in assignment.keys()], key=mrv_hueristic.__getitem__)
         return temp[0]
 
     def backtrack(self, assignment):
@@ -288,7 +301,33 @@ class CrosswordCreator():
 
         If no assignment is possible, return None.
         """
-        raise NotImplementedError
+        # check if we've completed assignment and stop the recursion if so
+        if self.assignment_complete(assignment):
+            return assignment
+
+        # select a var to test
+        var = self.select_unassigned_variable(assignment)
+
+        # check all available values for this var
+        for value in self.order_domain_values(var, assignment):
+            # set var to this value for testing
+            assignment[var] = value
+
+            # check if the new assignment is consistent
+            if self.consistent(assignment):
+
+                # pass assignment through to backtrack - need to check new assignment and continue if consistent
+                result = self.backtrack(assignment)
+                if result != False:
+                    # if no failure raised, great this value seems to work
+                    return assignment
+
+                # otherwise this caused a failure so we need to remove var-val pair from the assignment
+                assignment.pop(var)
+
+        # if loop ends without returning consistent result, return failure which triggers backtrack
+        return False
+
 
 
 def main():
